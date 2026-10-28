@@ -1,0 +1,1368 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Checklists</title>
+<style>
+  :root {
+    --bg: #f5f8f6; --card: #ffffff; --ink: #1f2b25; --muted: #56665e; --line: #d3e0d9;
+    --brand: #547867; --kitchen: #6b8b7c; --front: #547867; --both: #8aa597;
+    --done: #547867; --done-bg: #dde8e2; --amber: #a86f00; --amber-bg: #fff3d1;
+    --red: #b3261e; --red-bg: #fbe3e0; --skip-bg: #eceeed;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  body { padding: 0 0 130px; }
+  button, input, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 16px; }
+
+  /* ---------- top bar ---------- */
+  .top { position: sticky; top: 0; z-index: 5; background: #111; color: #fff; border-bottom: 5px solid var(--brand);
+    padding: 12px 0; padding-top: calc(12px + env(safe-area-inset-top)); }
+  .top .wrap { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .back { text-decoration: none; color: #fff; font-weight: 700; font-size: 16px; padding: 10px 14px;
+    border: 2px solid #3a3a3a; border-radius: 12px; background: #1d1d1d; white-space: nowrap; }
+  .ttl { flex: 1; min-width: 200px; }
+  .ttl .logo { display: block; height: 13px; width: auto; margin-bottom: 6px; }
+  .ttl h1 { margin: 0; font-size: 24px; letter-spacing: -0.3px; }
+  .ttl .sub { color: #bccfc5; font-size: 15px; margin-top: 2px; }
+  .storechip { display: inline-flex; align-items: center; gap: 6px; background: var(--brand); color: #fff; font-weight: 700; font-size: 14px; padding: 7px 12px;
+    border-radius: 999px; white-space: nowrap; }
+  .ic { width: 1em; height: 1em; flex: none; vertical-align: -0.125em; }
+  .sync { font-size: 13px; font-weight: 600; color: #bccfc5; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .sync .dot { width: 10px; height: 10px; border-radius: 50%; background: #8fb3a1; }
+  .sync.saving .dot { background: var(--amber); }
+  .sync.off .dot { background: var(--red); }
+  .progress { height: 8px; background: #2c2c2c; border-radius: 99px; overflow: hidden; margin-top: 10px; }
+  .progress i { display: block; height: 100%; background: #8fb3a1; transition: width .3s; }
+
+  /* ---------- big choice screens ---------- */
+  .screen { padding-top: 28px; padding-bottom: 28px; }
+  .screen h2 { font-size: 30px; margin: 0 0 6px; letter-spacing: -0.3px; }
+  .screen .lead { color: var(--muted); font-size: 18px; margin: 0 0 22px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .bigcard { position: relative; text-align: left; border: none; border-radius: 22px; padding: 26px 24px; min-height: 190px;
+    color: #fff; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; }
+  .bigcard:active { transform: scale(0.98); }
+  .bigcard .ic { width: 64px; height: 64px; display: grid; place-items: center; border-radius: 18px; background: rgba(255,255,255,.9); font-size: 38px; line-height: 1; margin-bottom: auto; }
+  .bigcard .nm { font-size: 30px; font-weight: 800; }
+  .bigcard .ds { font-size: 16px; opacity: .88; }
+  .bigcard .badge { position: absolute; top: 16px; right: 16px; background: #fff; color: var(--ink); font-size: 13px;
+    font-weight: 800; padding: 6px 10px; border-radius: 999px; }
+  /* Opening = morning sky, Keep It Moving = afternoon sunset, Closing = night sky with stars */
+  .c-morning { background: linear-gradient(180deg, #4fa3e3 0%, #8cc8f2 55%, #d6eefc 100%); color: #0f3354; }
+  .c-morning .ds { opacity: .8; }
+  .c-closing { background-color: #0b0c10;
+    background-image:
+      radial-gradient(3.5px 3.5px at 26% 26%, rgba(255,255,255,1) 60%, transparent 100%),
+      radial-gradient(3.5px 3.5px at 82% 81%, rgba(255,255,255,0.85) 60%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 40% 21%, rgba(255,255,255,0.7) 60%, transparent 100%),
+      radial-gradient(2px 2px at 78% 53%, rgba(255,255,255,0.85) 60%, transparent 100%),
+      radial-gradient(3.5px 3.5px at 81% 4%, rgba(255,255,255,0.7) 60%, transparent 100%),
+      radial-gradient(2.5px 2.5px at 26% 33%, rgba(255,255,255,0.7) 60%, transparent 100%),
+      radial-gradient(2px 2px at 61% 44%, rgba(255,255,255,0.85) 60%, transparent 100%),
+      radial-gradient(3px 3px at 68% 32%, rgba(255,255,255,1) 60%, transparent 100%),
+      radial-gradient(3px 3px at 65% 3%, rgba(255,255,255,0.7) 60%, transparent 100%),
+      radial-gradient(3px 3px at 72% 13%, rgba(255,255,255,1) 60%, transparent 100%),
+      radial-gradient(2.5px 2.5px at 42% 32%, rgba(255,255,255,1) 60%, transparent 100%),
+      radial-gradient(2px 2px at 74% 16%, rgba(255,255,255,0.7) 60%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 89% 3%, rgba(255,255,255,0.85) 60%, transparent 100%),
+      radial-gradient(3.5px 3.5px at 82% 28%, rgba(255,255,255,1) 60%, transparent 100%),
+      radial-gradient(2px 2px at 45% 14%, rgba(255,255,255,1) 60%, transparent 100%),
+      radial-gradient(3px 3px at 64% 25%, rgba(255,255,255,0.85) 60%, transparent 100%),
+      radial-gradient(2px 2px at 26% 19%, rgba(255,255,255,1) 60%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 55% 30%, rgba(255,255,255,1) 60%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 77% 41%, rgba(255,255,255,0.85) 60%, transparent 100%),
+      radial-gradient(2.5px 2.5px at 79% 85%, rgba(255,255,255,0.7) 60%, transparent 100%),
+      radial-gradient(3.5px 3.5px at 35% 4%, rgba(255,255,255,1) 60%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 76% 84%, rgba(255,255,255,0.7) 60%, transparent 100%),
+      radial-gradient(2px 2px at 78% 50%, rgba(255,255,255,1) 60%, transparent 100%),
+      radial-gradient(3px 3px at 26% 23%, rgba(255,255,255,0.85) 60%, transparent 100%),
+      radial-gradient(2px 2px at 89% 52%, rgba(255,255,255,0.7) 60%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 55% 9%, rgba(255,255,255,0.7) 60%, transparent 100%),
+      radial-gradient(3px 3px at 34% 33%, rgba(255,255,255,1) 60%, transparent 100%),
+      radial-gradient(2px 2px at 78% 65%, rgba(255,255,255,0.85) 60%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 94% 11%, rgba(255,255,255,0.85) 60%, transparent 100%),
+      radial-gradient(2.5px 2.5px at 85% 81%, rgba(255,255,255,0.7) 60%, transparent 100%),
+      radial-gradient(120% 90% at 85% 0%, #1b2233 0%, #0b0c10 60%); }
+  .c-slow { background: linear-gradient(160deg, #ff8a5c 0%, #ffad7a 50%, #ffd3a3 100%) !important; color: #4a1d06 !important; border: none !important; }
+  .c-slow .badge { background: #4a1d06 !important; color: #fff !important; }
+  .c-slow { background: #dde8e2; color: #1f2b25; border: 2px solid #bccfc5; }
+  .c-slow .ic { background: #fff; }
+  .bigcard .badge { background: #fff; }
+  .c-slow .badge { background: var(--brand); color: #fff; }
+  .c-store { background: var(--brand); min-height: 150px; }
+
+  .form { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 22px; max-width: 760px; }
+  .field { margin-bottom: 18px; }
+  .field label { display: block; font-weight: 800; font-size: 15px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .field label.k { color: var(--kitchen); } .field label.f { color: var(--front); }
+  input[type=text], input[type=number], textarea { width: 100%; font-size: 22px; padding: 15px 16px; border: 2px solid var(--line);
+    border-radius: 14px; background: var(--bg); }
+  input:focus, textarea:focus { outline: none; border-color: var(--brand); background: #fff; }
+  textarea { min-height: 110px; resize: vertical; }
+  .toggle { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 2px solid var(--line); border-radius: 14px;
+    background: var(--bg); width: 100%; text-align: left; font-size: 20px; font-weight: 700; margin-bottom: 18px; }
+  .toggle .sw { width: 54px; height: 32px; border-radius: 99px; background: var(--line); position: relative; flex: none; transition: background .15s; }
+  .toggle .sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; background: #fff; transition: left .15s; }
+  .toggle.on .sw { background: var(--done); } .toggle.on .sw::after { left: 25px; }
+  .primary { width: 100%; min-height: 70px; border: none; border-radius: 18px; background: var(--brand); color: #fff; font-size: 24px; font-weight: 800; }
+  .primary:disabled { background: #b9c7c0; cursor: not-allowed; }
+  .ghost { min-height: 54px; padding: 0 18px; border: 2px solid var(--line); border-radius: 14px; background: #fff; font-weight: 700; font-size: 17px; color: var(--muted); }
+
+  /* ---------- checklist ---------- */
+  .banner { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 14px 18px; margin: 18px 0 14px;
+    display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; font-size: 16px; }
+  .banner b { font-size: 17px; }
+  .nchips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .nchip { min-height: 54px; padding: 0 20px; border-radius: 14px; border: 2px solid var(--line); background: #fff; font-size: 19px; font-weight: 700; color: var(--ink); }
+  .nchip.on { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .reasons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .reason { min-height: 62px; padding: 8px 12px; border-radius: 14px; border: 2px solid var(--line); background: #fff; font-size: 17px; font-weight: 700; text-align: left; color: var(--ink); }
+  .reason.on { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .mlabel { display: block; font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 16px 0 8px; }
+  .modal .primary:disabled { background: #b9c7c0; }
+  @media (max-width: 520px) { .reasons { grid-template-columns: 1fr; } }
+  .notesbox { background: #fff; border: 2px solid #bccfc5; border-left: 8px solid var(--brand); border-radius: 18px; padding: 14px 18px; margin: 0 0 14px; }
+  .notesbox h3 { margin: 0 0 6px; font-size: 14px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--brand); display: flex; align-items: center; gap: 8px; }
+  .nitem { padding: 12px 0; border-top: 1px solid #bccfc5; }
+  .nitem:first-of-type { border-top: none; }
+  .nitem.handoff { background: #10131c; color: #fff; border-radius: 14px; padding: 14px 16px; margin: 6px 0; border-top: none; }
+  .nitem.handoff .ntext { font-size: 19px; }
+  .nitem.handoff .ackd { color: #9fd3b6; }
+  .ntext { font-size: 20px; font-weight: 700; line-height: 1.35; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .nacks { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center; }
+  .ack { min-height: 50px; padding: 0 16px; border-radius: 12px; border: 2px solid var(--brand); background: #fff; color: var(--brand); font-size: 17px; font-weight: 800; }
+  .ack.on { background: var(--done); border-color: var(--done); color: #fff; }
+  .ackd { font-size: 15px; font-weight: 700; color: var(--done); }
+  .gate .notesbox { padding: 20px 22px; }
+  .gate .ntext { font-size: 24px; }
+  .banner .crew { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-weight: 700; font-size: 15px; color: #fff; }
+  .pill.k { background: var(--kitchen); } .pill.f { background: var(--front); } .pill.b { background: var(--both); color: var(--ink); }
+  .linkbtn { border: none; background: none; color: var(--muted); text-decoration: underline; font-size: 15px; padding: 6px; }
+  .rule { color: var(--muted); font-size: 15px; margin-left: auto; }
+
+  .tabs { display: none; gap: 8px; margin: 0 0 12px; position: sticky; top: var(--topH, 96px); z-index: 4; background: var(--bg); padding: 6px 0; }
+  .tabs button { flex: 1; min-height: 56px; border-radius: 14px; border: 2px solid var(--line); background: #fff; font-size: 19px; font-weight: 800; }
+  .tabs button.on.k { background: var(--kitchen); border-color: var(--kitchen); color: #fff; }
+  .tabs button.on.f { background: var(--front); border-color: var(--front); color: #fff; }
+  .tabs .cnt { font-weight: 600; opacity: .8; font-size: 15px; }
+
+  .stations { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+  .sec { background: var(--card); border: 1px solid var(--line); border-radius: 18px; margin-bottom: 14px; overflow: hidden; }
+  .sechead { padding: 12px 16px; color: #fff; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .sechead h3 { margin: 0; font-size: 19px; letter-spacing: .5px; text-transform: uppercase; }
+  .sechead .secwho { font-size: 15px; font-weight: 700; opacity: .9; }
+  .sechead .count { font-size: 14px; font-weight: 800; background: rgba(255,255,255,.2); padding: 4px 10px; border-radius: 99px; }
+  .sec.k .sechead { background: var(--kitchen); } .sec.f .sechead { background: var(--front); } .sec.b .sechead { background: var(--both); color: var(--ink); } .sec.b .sechead .count { background: rgba(255,255,255,.55); }
+  .secsub { padding: 8px 16px; font-size: 14px; color: var(--muted); border-bottom: 1px solid var(--line); }
+
+  .task { display: flex; gap: 14px; padding: 14px 14px 14px 16px; border-top: 1px solid var(--line); align-items: flex-start; position: relative; }
+  .task:first-of-type { border-top: none; }
+  .task.tap { cursor: pointer; }
+  .task.tap:active { background: #e6efe9; }
+  .tbox { flex: none; width: 46px; height: 46px; border-radius: 12px; border: 3px solid var(--line); background: #fff;
+    display: grid; place-items: center; font-size: 24px; font-weight: 900; color: transparent; margin-top: 2px; }
+  .tmain { flex: 1; min-width: 0; }
+  .tline { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .time { font-weight: 800; font-size: 15px; color: var(--muted); background: var(--bg); border: 1px solid var(--line); padding: 2px 8px; border-radius: 8px; font-variant-numeric: tabular-nums; }
+  .tt { font-size: 20px; font-weight: 700; line-height: 1.25; }
+  .td { color: var(--muted); font-size: 15px; margin-top: 4px; line-height: 1.4; }
+  .meta { margin-top: 8px; font-size: 15px; font-weight: 700; color: var(--done); display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+  .meta .late { color: var(--amber); }
+  .skipbtn { flex: none; border: 2px solid var(--line); background: #fff; color: var(--muted); font-size: 14px; font-weight: 700;
+    border-radius: 10px; padding: 8px 12px; margin-top: 4px; }
+  .undo { border: none; background: none; color: var(--muted); text-decoration: underline; font-size: 14px; font-weight: 600; padding: 2px; }
+
+  .task.next { box-shadow: inset 6px 0 0 var(--brand); background: #eef4f0; }
+  .task.next .tbox { border-color: var(--brand); }
+  .task.lateNow { background: var(--amber-bg); box-shadow: inset 6px 0 0 var(--amber); }
+  .task.lateNow .time { background: var(--amber); color: #fff; border-color: var(--amber); }
+  .task.done .tbox { background: var(--done); border-color: var(--done); color: #fff; }
+  .task.done .tt { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 2px; }
+  .task.done .td { display: none; }
+  .task.skipped { background: var(--skip-bg); }
+  .task.skipped .tbox { border-style: dashed; color: var(--muted); }
+  .task.skipped .meta { color: var(--muted); }
+
+  .ctrls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .who { min-height: 52px; padding: 0 16px; border-radius: 12px; border: 2px solid var(--line); background: #fff; font-size: 17px; font-weight: 800; }
+  .who.k { border-color: var(--kitchen); color: var(--kitchen); } .who.f { border-color: var(--front); color: var(--front); }
+  .who.on { color: #fff; } .who.k.on { background: var(--kitchen); } .who.f.on { background: var(--front); }
+  .who.b { border-color: var(--both); color: var(--ink); } .who.b.on { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .temps { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+  .temp { display: flex; align-items: center; gap: 8px; background: var(--bg); border: 2px solid var(--line); border-radius: 12px; padding: 6px 10px; }
+  .temp span { font-weight: 700; font-size: 15px; }
+  .temp input { width: 92px; font-size: 22px; padding: 8px 10px; text-align: center; background: #fff; }
+  .temp.over { border-color: var(--red); background: var(--red-bg); }
+  .temp.over input { border-color: var(--red); color: var(--red); font-weight: 800; }
+  .warn { color: var(--red); font-weight: 800; font-size: 15px; margin-top: 8px; }
+  .cash { display: flex; align-items: center; gap: 8px; margin-top: 10px; max-width: 280px; }
+  .cash b { font-size: 22px; } .cash input { font-size: 22px; padding: 10px 12px; background: #fff; }
+  a.actbtn { display: inline-flex; align-items: center; text-decoration: none; }
+  .prepsum { font-weight: 700; color: var(--muted); font-size: 16px; }
+  .makecard { background: #fff; border: 2px solid #f0c9b0; border-left: 8px solid #ee7f33; border-radius: 18px; padding: 14px 18px; margin: 0 0 14px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .makecard .lbl { font-size: 13px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: #c2611f; }
+  .makecard .items { font-size: 19px; font-weight: 700; margin-top: 4px; }
+  .makecard .items span { white-space: nowrap; }
+  .makecard a { margin-left: auto; }
+  .actbtn { min-height: 52px; padding: 0 18px; border-radius: 12px; border: none; background: var(--brand); color: #fff; font-size: 17px; font-weight: 800; }
+
+  .footnote { text-align: center; color: var(--muted); font-size: 15px; margin: 10px 0 0; }
+
+  /* ---------- bottom bar ---------- */
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    background: linear-gradient(to top, var(--bg) 72%, rgba(245,248,246,0)); }
+  .bar .inner { max-width: 1240px; margin: 0 auto; }
+  .finish { width: 100%; min-height: 72px; border: none; border-radius: 18px; font-size: 24px; font-weight: 800; background: var(--done); color: #fff; }
+  .finish:disabled { background: #b9c7c0; cursor: not-allowed; }
+
+  /* ---------- slow time ---------- */
+  .nextup { background: var(--brand); color: #fff; border-radius: 22px; padding: 22px; margin: 18px 0 14px; display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+  .nextup .lbl { font-size: 14px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; opacity: .8; }
+  .nextup .big { font-size: 28px; font-weight: 800; margin: 4px 0; }
+  .nextup .d { opacity: .85; font-size: 16px; }
+  .nextup .go { margin-left: auto; min-height: 72px; padding: 0 34px; border-radius: 18px; border: none; background: #fff; color: var(--brand); font-size: 24px; font-weight: 900; }
+  .slowgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+  .reqrow { display: flex; gap: 10px; padding: 14px 16px; border-top: 1px solid var(--line); }
+  .reqrow input { flex: 1; min-width: 0; font-size: 19px; padding: 12px 14px; }
+
+  /* ---------- modal + toast ---------- */
+  .overlay { position: fixed; inset: 0; z-index: 20; display: none; align-items: center; justify-content: center; background: rgba(31,43,37,.5); padding: 16px; }
+  .overlay.show { display: flex; }
+  .modal { background: #fff; border-radius: 24px; padding: 26px; width: 100%; max-width: 620px; max-height: 90vh; overflow-y: auto; }
+  .modal h3 { margin: 0 0 6px; font-size: 26px; }
+  .modal p { margin: 0 0 16px; color: var(--muted); font-size: 17px; }
+  .modal .row { display: flex; gap: 10px; margin-top: 18px; }
+  .modal .row button { flex: 1; }
+  .modal .big { font-size: 60px; line-height: 1; margin-bottom: 8px; display: grid; place-items: center; color: var(--brand); }
+  .garea { border: 2px solid var(--line); border-radius: 14px; padding: 12px; margin-bottom: 10px; }
+  .garea .gtop { display: flex; align-items: center; gap: 10px; }
+  .garea .gname { flex: 1; font-size: 20px; font-weight: 800; }
+  .gbtn { min-height: 50px; min-width: 90px; border-radius: 12px; border: 2px solid var(--line); background: #fff; font-size: 17px; font-weight: 800; }
+  .gbtn.pass.on { background: var(--done); border-color: var(--done); color: #fff; }
+  .gbtn.miss.on { background: var(--red); border-color: var(--red); color: #fff; }
+  .garea input { margin-top: 10px; font-size: 18px; padding: 12px; }
+  .toast { position: fixed; left: 50%; bottom: 110px; transform: translateX(-50%) translateY(20px); z-index: 15; background: var(--brand); color: #fff;
+    padding: 12px 14px 12px 20px; border-radius: 14px; font-size: 17px; font-weight: 600; display: flex; gap: 14px; align-items: center;
+    opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; max-width: calc(100% - 32px); }
+  .toast.show { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
+  .toast button { border: none; background: #fff; color: var(--ink); font-weight: 800; padding: 10px 16px; border-radius: 10px; font-size: 16px; }
+
+  @media (max-width: 980px) {
+    .stations, .slowgrid { grid-template-columns: 1fr; }
+    .tabs { display: flex; }
+    .stations .sec.hideTab { display: none; }
+    .rule { margin-left: 0; }
+  }
+  @media (max-width: 600px) {
+    .tt { font-size: 18px; } .tbox { width: 40px; height: 40px; }
+    .screen h2 { font-size: 24px; }
+    .nextup .go { width: 100%; margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="bar" id="bar" hidden><div class="inner"><button class="finish" id="finishBtn" type="button" disabled>Finish</button></div></div>
+<div class="toast" id="toast"><span id="toastText"></span><button type="button" id="toastBtn">Undo</button></div>
+<div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
+
+<script>
+/* ============ EDIT THESE ============ */
+const CONFIG = {
+  ENDPOINT: "https://script.google.com/macros/s/AKfycbygeoLlirc5Ot1x6pK4_xFiqFNZ50jCy3Bx0TeJ8DaCH8_QKp8AoJr9bWvp-fMX78Nm/exec",
+  TOKEN: "Bonnie",
+  STORES: ["Fort Walton Beach", "Miramar Beach"],
+  FRIDGES: ["Fridge 1", "Fridge 2"],   // one temp box per fridge — rename or add more
+  TEMP_MAX: 41,                         // °F
+  LATE_AFTER_MIN: 15,                   // a timed task turns amber this many minutes after its time
+  MORNING_UNTIL_HOUR: 11,               // before 11 a.m. the tablet suggests Opening
+  CLOSING_FROM_HOUR: 21                 // from 9 p.m. (an hour before the 10 p.m. close) it suggests Closing
+};
+/* ==================================== */
+
+const TZ = "America/Chicago";
+const LOGO = '<svg class="logo" viewBox="12 151.5 336 35" fill="currentColor" role="img" aria-label="Thick Cookie Co."><title>Thick Cookie Co.</title><path d="M159.3,164.8c.11.0.2.1.28.2s.11.2.1.33c0,.1-.03.2-.08.3l-1.3,2.3c-.16.2-.32.3-.5.3-.05,0-.12-.01-.19-.03-.07-.02-.15-.06-.22-.1-.58-.42-1.2-.74-1.8-.97-.67-.23-1.3-.35-2.1-.35-.95,0-1.8.18-2.6.5-.79.3-1.4.84-2.0,1.4-.58.6-1.0,1.3-1.3,2.1-.32.8-.48,1.7-.48,2.6s.16,1.8.48,2.6c.32.8.77,1.5,1.3,2.1s1.2,1.0,2.0,1.4c.79.3,1.6.53,2.6.5.75,0,1.4-.12,2.1-.35.6-.23,1.3-.56,1.8-.97.0-.06.1-.09.2-.11.0-.02.1-.03.2-.04.1,0,.32.1.4.31l1.3,2.3c.05.1.08.2.08.3,0,.13-.04.2-.12.3s-.17.1-.27.2c-.87.5-1.8,1.0-2.8,1.3-1.0.32-2.0.48-3.1.48-.98,0-1.9-.13-2.8-.38s-1.7-.61-2.5-1.0-1.5-1.0-2.1-1.6-1.2-1.3-1.6-2.1-.82-1.6-1.0-2.5-.38-1.8-.38-2.8.13-1.9.38-2.8.61-1.7,1.0-2.5c.46-.79,1.0-1.5,1.6-2.1s1.3-1.2,2.1-1.6,1.6-.82,2.5-1.0,1.8-.38,2.8-.38c1.1,0,2.1.16,3.1.47.9.31,1.9.76,2.8,1.3Z"/><path d="M166.6,173.6c0-.97.1-1.9.38-2.8s.61-1.7,1.0-2.5,1.0-1.5,1.6-2.1c.64-.65,1.3-1.2,2.1-1.6.79-.46,1.6-.82,2.5-1.0s1.8-.38,2.8-.38,1.9.13,2.8.38,1.7.61,2.5,1.0c.79.4,1.5,1.0,2.1,1.6s1.2,1.3,1.6,2.1.82,1.6,1.0,2.5.38,1.8.38,2.8-.13,1.9-.38,2.8-.61,1.7-1.0,2.5c-.46.7-1.0,1.5-1.6,2.1-.65.6-1.3,1.2-2.1,1.6-.79.4-1.6.82-2.5,1.0s-1.8.38-2.8.38-1.9-.13-2.8-.38-1.7-.61-2.5-1.0c-.79-.46-1.5-1.0-2.1-1.6s-1.2-1.3-1.6-2.1c-.46-.78-.82-1.6-1.0-2.5s-.38-1.8-.38-2.8ZM170.6,173.6c0,.94.1,1.8.51,2.6s.8,1.5,1.3,2.1c.59.6,1.2,1.0,2.0,1.4.8.3,1.6.53,2.6.53s1.7-.18,2.6-.53c.8-.35,1.5-.83,2.0-1.4.59-.6,1.0-1.3,1.4-2.1s.51-1.6.51-2.6-.17-1.8-.51-2.6-.81-1.5-1.4-2.1c-.59-.61-1.2-1.0-2.0-1.4-.8-.35-1.6-.53-2.6-.53s-1.8.18-2.6.53c-.8.3-1.5.8-2.0,1.4-.59.6-1.0,1.3-1.3,2.1s-.51,1.6-.51,2.6Z"/><path d="M194.6,173.6c0-.97.1-1.9.38-2.8s.61-1.7,1.0-2.5,1.0-1.5,1.6-2.1c.64-.65,1.3-1.2,2.1-1.6.79-.46,1.6-.82,2.5-1.0s1.8-.38,2.8-.38,1.9.13,2.8.38,1.7.61,2.5,1.0c.79.4,1.5,1.0,2.1,1.6s1.2,1.3,1.6,2.1.82,1.6,1.0,2.5.38,1.8.38,2.8-.13,1.9-.38,2.8-.61,1.7-1.0,2.5c-.46.7-1.0,1.5-1.6,2.1-.65.6-1.3,1.2-2.1,1.6-.79.4-1.6.82-2.5,1.0s-1.8.38-2.8.38-1.9-.13-2.8-.38-1.7-.61-2.5-1.0c-.79-.46-1.5-1.0-2.1-1.6s-1.2-1.3-1.6-2.1c-.46-.78-.82-1.6-1.0-2.5s-.38-1.8-.38-2.8ZM198.6,173.6c0,.94.1,1.8.51,2.6s.8,1.5,1.3,2.1c.59.6,1.2,1.0,2.0,1.4.8.3,1.6.53,2.6.53s1.7-.18,2.6-.53c.8-.35,1.5-.83,2.0-1.4.59-.6,1.0-1.3,1.4-2.1s.51-1.6.51-2.6-.17-1.8-.51-2.6-.81-1.5-1.4-2.1c-.59-.61-1.2-1.0-2.0-1.4-.8-.35-1.6-.53-2.6-.53s-1.8.18-2.6.53c-.8.3-1.5.8-2.0,1.4-.59.6-1.0,1.3-1.3,2.1s-.51,1.6-.51,2.6Z"/><path d="M223.4,163.9c0-.17.0-.31.1-.43.1-.12.2-.18.4-.18h2.8c.07,0,.14.0.22.0.08.0.15.0.22.1.06.0.12.1.17.2.0.07.0.16.0.25v8.2l7.8-8.4c.19-.29.3-.43.6-.43h3.9c.25,0,.38.0.38.1,0,.08-.06.1-.17.2l-7.3,8.5,8.5,11.1c.14.1.21.3.21.4,0,.1-.1.1-.29.1h-4.2c-.22,0-.43-.14-.61-.43l-6.5-8.3-2.3,2.4v5.7c0,.41-.22.6-.67.6h-2.8c-.41,0-.61-.2-.61-.61v-19.4Z"/><path d="M248.2,163.9c0-.17.0-.31.1-.43.1-.12.2-.18.4-.18h2.7c.16,0,.31.0.44.1.14.1.21.2.21.4v19.4c0,.41-.22.6-.65.6h-2.7c-.41,0-.61-.2-.61-.61v-19.4Z"/><path d="M260.6,163.9c0-.45.2-.67.6-.67h13.4c.24,0,.41.0.51.2.1.1.15.3.1.51v2.4c0,.17-.06.3-.17.4s-.29.2-.52.2h-9.9v4.2h7.6c.19-.02.3.02.4.12.1.1.1.26.1.49v2.5c0,.17-.05.3-.14.4s-.24.1-.45.1h-7.6v5.0h10.2c.26,0,.43.0.52.1.08.1.13.2.13.5v2.5c0,.39-.2.5-.61.5h-13.7c-.17,0-.31-.05-.43-.14-.12-.09-.18-.24-.18-.45v-19.4Z"/><path d="M311.0,164.8c.11.0.2.1.28.2s.11.2.1.33c0,.1-.03.2-.08.3l-1.3,2.3c-.16.2-.32.3-.5.3-.05,0-.12-.01-.19-.03-.07-.02-.15-.06-.22-.1-.58-.42-1.2-.74-1.8-.97-.67-.23-1.3-.35-2.1-.35-.95,0-1.8.18-2.6.5-.79.3-1.4.84-2.0,1.4-.58.6-1.0,1.3-1.3,2.1-.32.8-.48,1.7-.48,2.6s.16,1.8.48,2.6c.32.8.77,1.5,1.3,2.1s1.2,1.0,2.0,1.4c.79.3,1.6.53,2.6.5.75,0,1.4-.12,2.1-.35.6-.23,1.3-.56,1.8-.97.0-.06.1-.09.2-.11.0-.02.1-.03.2-.04.1,0,.32.1.4.31l1.3,2.3c.05.1.08.2.08.3,0,.13-.04.2-.12.3s-.17.1-.27.2c-.87.5-1.8,1.0-2.8,1.3-1.0.32-2.0.48-3.1.48-.98,0-1.9-.13-2.8-.38s-1.7-.61-2.5-1.0-1.5-1.0-2.1-1.6-1.2-1.3-1.6-2.1-.82-1.6-1.0-2.5-.38-1.8-.38-2.8.13-1.9.38-2.8.61-1.7,1.0-2.5c.46-.79,1.0-1.5,1.6-2.1s1.3-1.2,2.1-1.6,1.6-.82,2.5-1.0,1.8-.38,2.8-.38c1.1,0,2.1.16,3.1.47.9.31,1.9.76,2.8,1.3Z"/><path d="M318.3,173.6c0-.97.1-1.9.38-2.8s.61-1.7,1.0-2.5,1.0-1.5,1.6-2.1c.64-.65,1.3-1.2,2.1-1.6.79-.46,1.6-.82,2.5-1.0s1.8-.38,2.8-.38,1.9.13,2.8.38,1.7.61,2.5,1.0c.79.4,1.5,1.0,2.1,1.6s1.2,1.3,1.6,2.1.82,1.6,1.0,2.5.38,1.8.38,2.8-.13,1.9-.38,2.8-.61,1.7-1.0,2.5c-.46.7-1.0,1.5-1.6,2.1-.65.6-1.3,1.2-2.1,1.6-.79.4-1.6.82-2.5,1.0s-1.8.38-2.8.38-1.9-.13-2.8-.38-1.7-.61-2.5-1.0c-.79-.46-1.5-1.0-2.1-1.6s-1.2-1.3-1.6-2.1c-.46-.78-.82-1.6-1.0-2.5s-.38-1.8-.38-2.8ZM322.3,173.6c0,.94.1,1.8.51,2.6s.8,1.5,1.3,2.1c.59.6,1.2,1.0,2.0,1.4.8.3,1.6.53,2.6.53s1.7-.18,2.6-.53c.8-.35,1.5-.83,2.0-1.4.59-.6,1.0-1.3,1.4-2.1s.51-1.6.51-2.6-.17-1.8-.51-2.6-.81-1.5-1.4-2.1c-.59-.61-1.2-1.0-2.0-1.4-.8-.35-1.6-.53-2.6-.53s-1.8.18-2.6.53c-.8.3-1.5.8-2.0,1.4-.59.6-1.0,1.3-1.3,2.1s-.51,1.6-.51,2.6Z"/><path d="M342.6,181.3c0-.26.0-.48.1-.67.0-.19.2-.28.5-.28h2.1c.11,0,.23,0,.34.0.12,0,.22.0.32.0.1.0.18.1.2.18.0.08.1.1.1.3v2.0c0,.13,0,.25-.01.3,0,.11-.03.2-.08.3-.04.0-.1.1-.19.2-.08.0-.2.0-.35.0h-2.1c-.32,0-.57-.03-.74-.1-.17-.07-.25-.24-.25-.52v-2.0Z"/><path d="M33.6,163.4h-5.4v21.4h-8.7v-21.4h-5.5v-8.7h19.8v8.7Z"/><path d="M61.4,184.9h-8.5v-10.8h-7.5v10.8h-8.5v-30.2h8.5v10.8h7.5v-10.8h8.5v30.2Z"/><path d="M74.4,184.9h-8.5v-30.2h8.5v30.2Z"/><path fill-rule="evenodd" d="M107.4,177.1c-2.6-.07-3.7-1.5-3.7-4.0h0c-5.4-1.4-6.7-6.8-2.1-10.7-1.2-1.7-.63-3.8,1.3-5.5-7.5-5.4-18.4-3.4-23.3,4.6-4.1,6.8-2.4,15.9,3.9,20.8,7.1,5.5,17.4,4.0,22.7-3.2.47-.65.8-1.3,1.2-2ZM85.1,163.2c.65-1.5,2.6-2.0,3.8-.82.6.66.9,1.7.55,2.6-.65,1.5-2.6,2.0-3.8.82-.69-.66-.91-1.7-.55-2.6ZM83.7,173.2c-1.2-.43-1.5-1.9-.6-2.8.44-.42,1.1-.56,1.6-.35,1.2.43,1.5,1.9.6,2.8-.44.4-1.1.56-1.6.35ZM93.8,163.6c-.61-.4-.78-1.2-.39-1.8s1.2-.78,1.8-.39.7,1.2.39,1.8-1.2.78-1.8.39ZM91.8,171.0c-.64-.42-.82-1.2-.4-1.9s1.2-.82,1.9-.4.8,1.2.4,1.9-1.2.82-1.9.4ZM91.9,180.5c-1.4-.6-1.8-2.4-.76-3.5.61-.63,1.5-.84,2.4-.51,1.4.6,1.8,2.4.76,3.5-.61.6-1.5.84-2.4.5Z"/><path d="M93.3,153.8c3.3,0,6.6,1,9.5,3.0-1.9,1.6-2.6,3.8-1.3,5.5-4.6,3.8-3.3,9.2,2.1,10.7h0c.03,2.4,1.1,3.9,3.7,4.0-.36.6-.77,1.3-1.2,2-3.1,4.3-8,6.6-12.9,6.6-3.4,0-6.8-1.0-9.7-3.3-6.3-4.9-8.0-14-3.9-20.8,3.0-5.0,8.3-7.6,13.8-7.6M94.5,163.8c.43,0,.85-.21,1.1-.6.4-.61.2-1.4-.39-1.8-.22-.14-.47-.21-.72-.21-.43,0-.85.2-1.1.6-.4.6-.22,1.4.39,1.8.22.1.47.2.72.2M87.3,166.4c.92,0,1.8-.54,2.2-1.5.3-.88.1-1.9-.55-2.6-.48-.46-1.0-.68-1.6-.68-.92,0-1.8.54-2.2,1.5-.36.8-.14,1.9.55,2.6.4.46,1.0.68,1.6.68M92.5,171.2c.45,0,.89-.22,1.1-.63.4-.64.2-1.4-.4-1.9-.23-.15-.49-.22-.75-.22-.45,0-.89.2-1.1.63-.42.6-.23,1.4.4,1.9.23.1.49.2.75.2M84.3,173.3c.42,0,.83-.16,1.1-.45.9-.88.6-2.4-.6-2.8-.17-.06-.35-.09-.54-.09-.42,0-.83.1-1.1.45-.93.8-.61,2.4.6,2.8.17.0.35.0.54.0M92.7,180.6c.59,0,1.1-.23,1.5-.67,1.1-1.1.7-2.9-.76-3.5-.26-.11-.54-.16-.81-.16-.59,0-1.1.23-1.5.67-1.1,1.1-.7,2.9.76,3.5.26.1.54.1.81.1M92.7,178.4s.02,0,.03,0c.03.0.04.0.04.0,0,.01,0,.03-.03.0,0,0,0,0,0,0,0,0-.02,0-.03,0h0s-.03-.03-.03-.04c0-.01,0-.03.0-.06,0,0,0,0,0,0h0Z"/><path d="M125.0,168.2l8.6-8.7-5.4-5.4-11.6,11.6v-11.0h-8.5v20.3l2.8.07-1.6,3.0c-.36.6-.78,1.3-1.2,2.0v4.7h8.5v-8.2l2.2-2.2,7.3,10.4h10.4l-11.6-16.6Z"/></svg>';
+const IC = {
+  pin: "📍 ", note: "📌", pinBig: '<span class="ic">📍</span>', sun: '<span class="ic">☀️</span>', moon: '<span class="ic">🌙</span>',
+  spark: '<span class="ic">🧽</span>', ok: "✅", flag: "🏁", wifi: "📶"
+};
+
+/* ---------- the checklists (from the wall display) ---------- */
+const CHECKLISTS = {
+  morning: {
+    name: "Opening Checklist",
+    sub: "Arrive 7:00 · Ovens on 8:30 · Baking 8:45 · In the case by 9:45 · Open 10:00",
+    sections: [
+      { id: "start", who: "b", title: "Start", sub: "Both · 7:00 a.m., before touching anything", tasks: [
+        { id: "m.clockin", time: "7:00", kind: "each", t: "Clock in on Gusto", d: "Clocked in the moment you arrive. Phone put away." },
+        { id: "m.grade", time: "7:10", kind: "grade", t: "Grade last night's close", d: "Check floors, dishes, trash, tables, mixer and signs. Any Miss goes to the owners automatically." }
+      ]},
+      { id: "kitchen", who: "k", title: "Kitchen", tasks: [
+        { id: "m.temps", time: "7:15", kind: "temp", t: "Log fridge temperatures", d: "Each fridge temp in the boxes. Anything above 41°F emails the owners right away." },
+        { id: "m.frost", time: "7:20", t: "Take frostings out of the fridge to thaw", d: "Lids on, labels visible, soft enough to use when baking starts." },
+        { id: "m.prep", time: "7:25", kind: "prep", t: "Check the prep list", d: "Mark every dough Full, Half, Low or Out. Frostings get Full, Low or Out. The list sorts what to make first." },
+        { id: "m.dishes", time: "7:30", t: "Put clean dishes away to their places", d: "Rack empty, everything in its labeled spot, nothing put away wet." },
+        { id: "m.parch", time: "8:00", t: "Line parchment on display pans", d: "Every pan lined flat, no tears, no crumbs." },
+        { id: "m.spat", time: "8:15", t: "Bring spatulas out", d: "One clean spatula at each flavor in the case." },
+        { id: "m.ovens", time: "8:30", t: "Turn ovens on", d: "Every oven on and heating at 8:30 sharp." },
+        { id: "m.bake", time: "8:45", due: "9:45", t: "Bake off and top cookies", d: "Start when ovens are at the right temp. Every flavor in the case by 9:45, matching the bake sheet and topping guide." }
+      ]},
+      { id: "front", who: "f", title: "Front", tasks: [
+        { id: "m.tablets", time: "7:10", t: "Turn tablets on", d: "Tablets on, logged in, order screen opens." },
+        { id: "m.speaker", time: "7:10", t: "Plug in speaker to charge", d: "Charging light on." },
+        { id: "m.floors", time: "7:20", t: "Check floors, tables and bathroom are clean", d: "No crumbs or sticky spots. Tables dry. Bathroom stocked with soap, paper towels and toilet paper." },
+        { id: "m.trash", time: "7:40", t: "Take out lobby AND bathroom trash", d: "Both bins empty with fresh liners. Bags in the dumpster." },
+        { id: "m.glass", time: "8:00", t: "Wipe down glass on doors, windows, display and top of display", d: "No smudges or fingerprints from the customer's side." },
+        { id: "m.bev", time: "8:30", t: "Ensure beverage fridge is stocked", d: "Every slot full, labels facing out, cold." },
+        { id: "m.help", time: "8:45", due: "9:45", t: "Help bake off and top cookies", d: "When your station is done, join the kitchen topping and loading the case until it's all in by 9:45." }
+      ]},
+      { id: "open", who: "b", title: "Open", sub: "Both · 9:45 to 10:00", tasks: [
+        { id: "m.buddy", time: "9:45", kind: "buddy", t: "Buddy check", d: "Walk each other's station and fix any miss before opening. You confirm the other person's station, never your own." },
+        { id: "m.signs", time: "9:50", kind: "anyone", t: "Bring foldable signs outside", d: "Out front, facing traffic, not blocking the walkway." },
+        { id: "m.opensign", time: "9:55", kind: "anyone", t: "Turn open sign on", d: "Sign on." },
+        { id: "m.open", time: "10:00", kind: "anyone", t: "OPEN STORE", d: "Doors unlocked, music on, both people in position." }
+      ]}
+    ]
+  },
+  closing: {
+    name: "Closing Checklist",
+    sub: "Start one hour before clocking out. Chip away between guests. Every item, every shift.",
+    sections: [
+      { id: "kitchen", who: "k", title: "Kitchen", tasks: [
+        { id: "c.ovens", t: "Turn ovens off", d: "Every oven off and display dark, trays out." },
+        { id: "c.ovenout", t: "Wipe down the outside of the ovens", d: "Doors, handles and control panels wiped, no grease or frosting smears." },
+        { id: "c.parch", t: "Throw away parchment from the front and back baking trays", d: "Every tray bare, parchment in the trash." },
+        { id: "c.sheets", t: "Clean display sheets", d: "Every sheet emptied and washed or wiped, dry and stacked for tomorrow." },
+        { id: "c.frost", t: "Place leftover frosting in the fridge if not using the next day", d: "Lids on, labeled with flavor and date." },
+        { id: "c.spat", t: "Wash spatulas in sink", d: "Washed, rinsed, drying on the rack." },
+        { id: "c.scoop", t: "Wash ice cream scoopers in sink", d: "Washed, rinsed, drying on the rack." },
+        { id: "c.dishes", t: "Wash ALL dishes in sink", d: "Sink empty, nothing stacked or soaking, rack full of clean dishes." },
+        { id: "c.mixers", t: "Clean mixers", d: "Bowls and attachments washed, body and arm wiped, no dough or sugar left." },
+        { id: "c.tables", t: "Wipe down stainless steel tables in the kitchen", d: "No dough, sugar or frosting left, dry and streak-free." },
+        { id: "c.sinks", t: "Wipe down the sinks", d: "Basin, faucet and handles wiped, no food in the drain." },
+        { id: "c.fridgeout", t: "Wipe the outside of the kitchen fridges", d: "Doors and handles wiped, no sticky spots." },
+        { id: "c.prep", kind: "prep", t: "Update the prep list for tomorrow", d: "Mark every dough and frosting so the opener knows what to make first." },
+        { id: "c.temps", kind: "temp", t: "Log fridge temperatures", d: "Each fridge temp in the boxes. Above 41°F emails the owners right away." }
+      ]},
+      { id: "front", who: "f", title: "Front", tasks: [
+        { id: "c.opensign", t: "Turn off OPEN sign", d: "Sign off at closing time." },
+        { id: "c.lockfront", t: "LOCK front door", d: "Locked and tugged, last customers already out." },
+        { id: "c.signs", t: "Bring foldable signs in from the front and back", d: "Both signs inside and stored in their spot." },
+        { id: "c.dd", t: "Plug in DoorDash tablet to charger", d: "Charging light on." },
+        { id: "c.tables", t: "Clean off tables, chairs, bar top and stools", d: "Wiped dry, chairs pushed in, stools tucked under." },
+        { id: "c.counter", t: "Clean the display counter", d: "Counter top and display glass wiped inside and out, no crumbs or fingerprints." },
+        { id: "c.drawer", kind: "cash", t: "Close out Shopify POS and count the drawer", d: "Report run, cash counted and entered below, cash stored in the usual spot." },
+        { id: "c.bev", t: "Wipe the outside of the beverage fridge", d: "Glass, door and handle wiped, no fingerprints." },
+        { id: "c.bath", t: "Wipe down the bathroom sink", d: "Basin, faucet, counter and mirror wiped, soap refilled." },
+        { id: "c.ktrash", t: "Take out kitchen trash", d: "Bin empty with a fresh liner, bag in the dumpster." },
+        { id: "c.sweep", t: "Sweep bathroom, hallway and lobby", d: "No crumbs or debris, corners and under tables included." },
+        { id: "c.mop", t: "Mop ALL wood floors", d: "No streaks or sticky spots, wet-floor sign out until dry." }
+      ]},
+      { id: "leave", who: "b", title: "Leave", sub: "Both · last 10 minutes", tasks: [
+        { id: "c.buddy", kind: "buddy", t: "Buddy check", d: "Walk each other's station and fix any miss. You confirm the other person's station, never your own." },
+        { id: "c.music", kind: "anyone", t: "Turn music/speaker off", d: "Speaker off." },
+        { id: "c.ac", kind: "anyone", t: "Turn A/C to 75° before leaving", d: "Thermostat reads 75°." },
+        { id: "c.lockback", kind: "anyone", t: "LOCK back door when leaving", d: "Locked and tugged, last person out." },
+        { id: "c.clockout", kind: "each", t: "Clock out on Gusto", d: "Only after both stations are signed off." }
+      ]}
+    ]
+  }
+};
+
+const GRADE_AREAS = ["Floors", "Dishes", "Trash", "Tables", "Mixer", "Signs"];
+
+const DEEP_CLEAN = {
+  1: { t: "Wipe down walls", d: "Kitchen and front walls wiped top to bottom, no splatter or flour film." },
+  2: { t: "Wipe the inside of the ovens", d: "Racks out and wiped, floor and walls of each oven free of burnt residue." },
+  3: { t: "Wipe the inside of the fridges", d: "Shelves and drawers emptied and wiped, old items tossed, everything back and labeled." },
+  4: { t: "Deep clean all baking sheets", d: "No baked-on residue or grease film, dry before stacking." },
+  5: { t: "Wipe down speed racks and clean baseboards", d: "Every shelf and rail wiped, wheels clear of debris. Baseboards wiped front to back. About 20 minutes for both." },
+  6: { t: "Deep clean the front door and clean the microwave", d: "Frame, handle, track and threshold scrubbed, glass streak-free inside and out. Microwave wiped inside and out, turntable washed. About 20 minutes for both." }
+};
+
+const SLOW = [
+  { id: "s1", title: "1 · Keep the front ready", note: "First", tasks: [
+    { id: "s.case", t: "Fill and face the display case", d: "Every flavor full and facing forward, no gaps." },
+    { id: "s.counter", t: "Wipe the display counter and tables", d: "No crumbs or fingerprints, chairs pushed in." },
+    { id: "s.bev", t: "Check the beverage fridge", d: "Every slot full, labels facing out." },
+    { id: "s.bath", t: "Check the bathroom", d: "Stocked, clean, trash not near full." },
+    { id: "s.sweep", t: "Quick sweep of the lobby", d: "No crumbs under tables or at the door." }
+  ]},
+  { id: "s2", title: "2 · Keep the kitchen moving", tasks: [
+    { id: "s.dishes", t: "Wash dishes as they pile up", d: "Sink never holds more than one load." },
+    { id: "s.toppings", t: "Restock toppings and frostings", d: "Full, labeled, within reach." },
+    { id: "s.batch", t: "Bake or prep the next batch", d: "Case stays full before the next rush." },
+    { id: "s.restock", t: "Restock boxes, bags, napkins, stickers, cups", d: "Front stations full." }
+  ]},
+  { id: "s3", title: "3 · Head start on closing", tasks: [
+    { id: "s.tables", t: "Wipe stainless steel tables and stations", d: "Clean and dry before the next use." },
+    { id: "s.spat", t: "Wash and put away spatulas and scoopers not in use", d: "Washed, rinsed, drying on the rack." },
+    { id: "s.mixers", t: "Clean mixers when not in use", d: "Bowls and attachments washed, body wiped." },
+    { id: "s.sheets", t: "Clean display sheets as they come out", d: "Washed or wiped, dry and stacked." },
+    { id: "s.wipe", t: "Wipe sinks and the outside of ovens and fridges", d: "No grease, smudges or sticky spots." }
+  ]},
+  { id: "s4", title: "4 · Today's weekly deep-clean job", note: "Start right after #1", deep: true, tasks: [] },
+  { id: "s5", title: "5 · Grow the shop", note: "Only when all else is done", tasks: [
+    { id: "s.boxes", t: "Pre-assemble boxes and packaging", d: "Stacked and ready for the rush." }
+  ], request: true }
+];
+
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const ls = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+};
+function makeId() {
+  if (window.crypto && crypto.randomUUID) { try { return crypto.randomUUID(); } catch (e) {} }
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+}
+function today() { return new Date().toLocaleDateString("en-CA", { timeZone: TZ }); }
+function minutesOf(ms) {
+  const p = new Intl.DateTimeFormat("en-US", { timeZone: TZ, hour: "numeric", minute: "numeric", hourCycle: "h23" }).formatToParts(new Date(ms));
+  return (+p.find(x => x.type === "hour").value % 24) * 60 + +p.find(x => x.type === "minute").value;
+}
+function weekday() {
+  const w = new Intl.DateTimeFormat("en-US", { timeZone: TZ, weekday: "short" }).format(new Date());
+  return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(w);
+}
+function hm(s) { const [h, m] = s.split(":").map(Number); return h * 60 + m; }
+function fmt(ms) { return new Date(ms).toLocaleTimeString("en-US", { timeZone: TZ, hour: "numeric", minute: "2-digit" }); }
+
+/* ---------- staff names: the owner's list comes first, so there are no duplicate buttons ---------- */
+function staffList() { try { const a = JSON.parse(localStorage.getItem("tccStaff")); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+function saveStaff(list) { if (Array.isArray(list)) { try { localStorage.setItem("tccStaff", JSON.stringify(list)); } catch (e) {} } }
+function titleCase(n) { return String(n || "").trim().replace(/\s+/g, " ").replace(/(^|[\s-])([a-z])/g, (m, a, c) => a + c.toUpperCase()); }
+// "morgan smith", "Morgan S", "MORGAN" -> "Morgan" when Morgan is on the staff list
+function matchName(typed) {
+  const t = String(typed || "").trim().replace(/\s+/g, " ");
+  if (!t) return "";
+  const roster = staffList(), lower = t.toLowerCase();
+  const exact = roster.find(n => n.toLowerCase() === lower);
+  if (exact) return exact;
+  const firstOf = n => n.toLowerCase().split(" ")[0].replace(/\.$/, "");
+  const sameFirst = roster.filter(n => firstOf(n) === firstOf(t));
+  if (sameFirst.length === 1) return sameFirst[0];
+  if (sameFirst.length > 1) {
+    const ini = (lower.split(" ")[1] || "").charAt(0);
+    const hit = ini ? sameFirst.filter(n => (n.toLowerCase().split(" ")[1] || "").charAt(0) === ini) : [];
+    if (hit.length === 1) return hit[0];
+  }
+  return titleCase(t);
+}
+
+/* ---------- names + items this tablet has seen (so staff tap instead of type) ---------- */
+const NAMES = {
+  list() {
+    const roster = staffList();
+    if (roster.length) return roster.slice().sort((a, b) => a.localeCompare(b));
+    const cut = Date.now() - 60 * 864e5;   // no staff list yet: names this tablet has seen (fade after 60 days)
+    return ls.get("tccNames", []).filter(x => x.t > cut).map(x => x.n).sort((a, b) => a.localeCompare(b)).slice(0, 14);
+  },
+  add(...names) {
+    let a = ls.get("tccNames", []);
+    names.forEach(n => {
+      n = String(n || "").trim(); if (!n) return;
+      a = a.filter(x => x.n.toLowerCase() !== n.toLowerCase());
+      a.push({ n, t: Date.now() });
+    });
+    ls.set("tccNames", a.slice(-40));
+  }
+};
+function rememberItem(item) {
+  item = String(item || "").trim(); if (!item) return;
+  let a = ls.get("tccItems", []).filter(x => x.n.toLowerCase() !== item.toLowerCase());
+  a.push({ n: item, t: Date.now() });
+  ls.set("tccItems", a.slice(-30));
+}
+
+// A tiny buzz so staff feel the tap (Android; iPads ignore it)
+function buzz() { try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) {} }
+
+// Keep the screen on while a checklist is open
+let wake = null;
+async function keepAwake() {
+  try {
+    if (cur && !wake && "wakeLock" in navigator && document.visibilityState === "visible") {
+      wake = await navigator.wakeLock.request("screen");
+      wake.addEventListener("release", () => { wake = null; });
+    }
+  } catch (e) {}
+}
+function letSleep() { try { if (wake) wake.release(); } catch (e) {} wake = null; }
+
+// Staff alerts sent straight from the checklist (shares the alert page's offline queue)
+let alertFlushing = false;
+async function flushAlerts() {
+  if (alertFlushing) return true;
+  alertFlushing = true;
+  let ok = true;
+  try {
+    for (const al of ls.get("alertQueue", []).slice()) {
+      let r;
+      try { r = await post(al); } catch (e) { ok = false; break; }
+      ls.set("alertQueue", ls.get("alertQueue", []).filter(x => x.id !== al.id));
+      if (!r || !r.ok) ok = false;
+    }
+  } finally { alertFlushing = false; }
+  return ok && !ls.get("alertQueue", []).length;
+}
+function sendAlert(o) {
+  const q = ls.get("alertQueue", []);
+  q.push({ id: makeId(), token: CONFIG.TOKEN, location: STORE, name: o.name, type: o.type, items: [o.item], notes: o.notes, sentAt: new Date().toISOString() });
+  ls.set("alertQueue", q);
+  rememberItem(o.item);
+  flushAlerts().then(sent => toast(sent ? "Skipped · alert sent to the owners" : "Skipped · alert saved, it'll send when back online"));
+}
+
+/* ---------- prep list (shared with prep.html) ---------- */
+let PREP = { items: [], levels: {} };
+function prepLevels() {
+  const lv = Object.assign({}, PREP.levels || {});
+  ls.get("tccPrepPending:" + STORE, []).forEach(p => { const c = lv[p.id]; if (!c || c.at <= p.at) lv[p.id] = { lvl: p.lvl, by: p.by, at: p.at }; });
+  return lv;
+}
+function prepStatus() {
+  const lv = prepLevels(), items = (PREP.items || []);
+  const startMin = cur && cur.shift === "closing" ? (CONFIG.CLOSING_FROM_HOUR - 1) * 60 : 5 * 60;   // this shift's updates only
+  const t = today();
+  let checked = 0, at = 0; const by = [];
+  items.forEach(i => {
+    const l = lv[i.id];
+    if (l && new Date(l.at).toLocaleDateString("en-CA", { timeZone: TZ }) === t && minutesOf(l.at) >= startMin) { checked++; at = Math.max(at, l.at); by.push(l.by); }
+  });
+  const need = items.filter(i => lv[i.id] && (lv[i.id].lvl === "out" || lv[i.id].lvl === "low")).length;
+  return { total: items.length, checked, need, by, at };
+}
+function prepNeeds() {
+  const lv = prepLevels(), rank = { out: 0, low: 1, half: 2 };
+  return (PREP.items || []).filter(i => lv[i.id] && rank[lv[i.id].lvl] != null)
+    .sort((a, b) => rank[lv[a.id].lvl] - rank[lv[b.id].lvl] || lv[a.id].at - lv[b.id].at)
+    .map(i => ({ name: i.name, lvl: lv[i.id].lvl }));
+}
+async function fetchPrep() {
+  if (!STORE) return;
+  try {
+    const r = await post({ action: "prep", store: STORE, ops: [] });
+    if (r && r.ok) { saveStaff(r.staff); PREP = { items: r.items || [], levels: r.levels || {} }; ls.set("tccPrep:" + STORE, PREP); if (cur) safeRender(); }
+  } catch (e) {}
+}
+
+/* ---------- app state ---------- */
+let STORE = ls.get("tccStore", null);
+if (STORE && CONFIG.STORES.indexOf(STORE) === -1) STORE = null;
+let screen = "pick";          // pick | crew | list | done | slow
+let cur = null;               // { shift, date, key }
+let server = { items: {}, submitted: null };
+let pending = [];
+let ITEMS = {};
+let syncing = false, syncState = "ok", syncErr = "";
+let tab = "f";
+let crewSolo = false;
+let crewDraft = { front: "", kitchen: "" };   // names being typed (kept even if the screen redraws)
+let crewErr = "";
+let NOTES = [];          // today's notes from the owners for this store
+let notesGate = false;   // show notes before the list when a shift starts
+let gateShown = false;   // once the notes screen is up, it stays until they tap Start
+
+function stateKey() { return "tccState:" + cur.key; }
+function pendKey() { return "tccPending:" + cur.key; }
+function merge() {
+  const items = Object.assign({}, server.items || {});
+  pending.forEach(p => { const c = items[p.id]; if (!c || c.at <= p.at) items[p.id] = { v: p.v, by: p.by, at: p.at }; });
+  ITEMS = items;
+}
+function V(id) { const it = ITEMS[id]; return it ? it.v : null; }
+function crew() {
+  const p = V("people");
+  if (!p) return null;
+  return { front: p.front, kitchen: p.solo ? p.front : p.kitchen, solo: !!p.solo };
+}
+function personFor(who) {
+  const c = crew(); if (!c) return "";
+  if (who === "k") return c.kitchen;
+  if (who === "f") return c.front;
+  return c.solo ? c.front : c.front + " & " + c.kitchen;
+}
+
+/* ---------- writes + sync ---------- */
+let lastUndo = null;
+function setItem(id, v, by, undoText) {
+  if (v) buzz();
+  const prev = ITEMS[id] ? ITEMS[id].v : null;
+  pending.push({ op: makeId(), id, v, by: by || "", at: Date.now() });
+  ls.set(pendKey(), pending);
+  merge();
+  render();
+  syncSoon();
+  if (undoText) toast(undoText, () => { pending.push({ op: makeId(), id, v: prev, by: by || "", at: Date.now() }); ls.set(pendKey(), pending); merge(); render(); syncSoon(); });
+}
+
+let syncTimer;
+function syncSoon() { clearTimeout(syncTimer); syncTimer = setTimeout(sync, 400); }
+
+async function post(body, timeoutMs) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs || 20000);
+  try {
+    const res = await fetch(CONFIG.ENDPOINT, {
+      method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(Object.assign({ token: CONFIG.TOKEN }, body)), signal: ctrl.signal
+    });
+    return await res.json();
+  } finally { clearTimeout(t); }
+}
+
+async function sync() {
+  if (syncing || !cur) return;
+  syncing = true;
+  const sending = pending.slice();
+  const key = cur.key;
+  if (sending.length) setSync("saving");
+  try {
+    const data = await post({ action: "sync", store: STORE, date: cur.date, shift: cur.shift, ops: sending, progress: progressNow() });
+    if (!cur || cur.key !== key) return;
+    if (data.ok) {
+      server = data.state || { items: {}, submitted: null };
+      if (Array.isArray(data.notes)) { NOTES = data.notes; ls.set("tccNotes:" + STORE, NOTES); }
+      saveStaff(data.staff);
+      ls.set(stateKey(), server);
+      const sent = new Set(sending.map(o => o.op));
+      pending = pending.filter(o => !sent.has(o.op));
+      ls.set(pendKey(), pending);
+      syncErr = "";
+      setSync(pending.length ? "saving" : "ok");
+    } else {
+      syncErr = data.error || "Server error";
+      setSync("off");
+    }
+  } catch (e) {
+    setSync("off");
+  } finally {
+    syncing = false;
+  }
+  if (cur && cur.key === key) {
+    merge();
+    if (server.submitted && screen === "list") screen = "done";
+    if (screen === "crew" && crew()) screen = "list";   // someone already started it on another tablet
+    if (screen !== "crew") safeRender();
+    if (pending.length && syncState !== "off") syncSoon();
+  }
+}
+function setSync(s) {
+  syncState = s;
+  const el = document.querySelector(".sync");
+  if (el) { el.className = "sync" + (s === "ok" ? "" : " " + s); el.lastElementChild.textContent = syncLabel(); }
+}
+function syncLabel() {
+  if (syncState === "saving") return "Saving…";
+  if (syncState === "off") return syncErr ? "Problem: " + syncErr : "Offline — saved here, will catch up";
+  return "Synced";
+}
+
+// Don't redraw while someone is typing in a box
+let dirty = false;
+function safeRender() {
+  const a = document.activeElement;
+  if (a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA") && $("app").contains(a)) { dirty = true; return; }
+  render();
+}
+document.addEventListener("focusout", () => setTimeout(() => { if (dirty) { dirty = false; safeRender(); } }, 50));
+
+setInterval(() => { if (cur && document.visibilityState === "visible" && !syncing) sync(); }, 12000);
+setInterval(() => { if (screen === "list") safeRender(); }, 60000); // refresh "late" highlights
+window.addEventListener("online", () => { if (cur) sync(); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && cur) { sync(); keepAwake(); } });
+setInterval(() => { if (navigator.onLine !== false && ls.get("alertQueue", []).length) flushAlerts(); }, 30000);
+setInterval(() => { if (cur && document.visibilityState === "visible") fetchPrep(); }, 20000);
+window.addEventListener("pageshow", () => { if (cur) fetchPrep(); });
+
+/* ---------- progress for the owner's live view ---------- */
+function progressNow() {
+  if (!cur || cur.shift === "slow" || !crew()) return undefined;
+  const all = allTasks(CHECKLISTS[cur.shift]);
+  return { done: all.filter(x => status(x.task, x.sec).resolved).length, total: all.length };
+}
+
+/* ---------- task status ---------- */
+function allTasks(def) {
+  const out = [];
+  def.sections.forEach(s => s.tasks.forEach(t => out.push({ task: t, sec: s })));
+  return out;
+}
+function status(t, sec) {
+  const sk = ITEMS["skip." + t.id];
+  if (sk && sk.v && sk.v.s) return { resolved: true, skipped: true, reason: sk.v.s, by: sk.by, at: sk.at };
+  const c = crew() || { solo: false };
+  const kind = t.kind || (sec.who === "b" ? "anyone" : "check");
+  let done = false, by = [], at = 0;
+  const take = id => { const it = ITEMS[id]; if (it && it.v) { by.push(it.by); at = Math.max(at, it.at); return true; } return false; };
+
+  if (kind === "check" || kind === "anyone") {
+    done = take(t.id) && !!V(t.id).d;
+  } else if (kind === "each" || kind === "buddy") {
+    if (c.solo) done = take(t.id + ".solo");
+    else { const a = take(t.id + ".f"), b = take(t.id + ".k"); done = a && b; }
+  } else if (kind === "temp") {
+    done = CONFIG.FRIDGES.every((f, i) => { const v = V("temp." + t.id + "." + i); return v && typeof v.t === "number"; });
+    if (done) CONFIG.FRIDGES.forEach((f, i) => take("temp." + t.id + "." + i));
+  } else if (kind === "cash") {
+    const v = V(t.id); done = !!(v && typeof v.c === "number"); if (done) take(t.id);
+  } else if (kind === "grade") {
+    const v = V("grade"); done = !!(v && v.areas && GRADE_AREAS.every(a => v.areas[a] && v.areas[a].g)); if (done) take("grade");
+  } else if (kind === "prep") {
+    const p = prepStatus();
+    done = p.total > 0 && p.checked === p.total;
+    if (done) { by = p.by; at = p.at; }
+  }
+  const st = { resolved: done, done, by: [...new Set(by.filter(Boolean))].join(" & "), at };
+  const due = t.due || t.time;
+  if (due && cur.shift === "morning") {
+    const limit = hm(due) + CONFIG.LATE_AFTER_MIN;
+    if (done && at) st.late = minutesOf(at) > limit;
+    if (!done) st.lateNow = minutesOf(Date.now()) > limit;
+  }
+  return st;
+}
+
+/* ---------- rendering ---------- */
+function render() {
+  merge();
+  const app = $("app");
+  $("bar").hidden = true;
+  if (!STORE) { app.innerHTML = renderStorePick(); return; }
+  if (screen === "pick") app.innerHTML = renderPick();
+  else if (screen === "crew") app.innerHTML = renderCrew();
+  else if (screen === "list") {
+    if (!crew()) { screen = "crew"; app.innerHTML = renderCrew(); return; }   // names missing: ask again instead of breaking
+    if (notesGate && NOTES.length && (gateShown || unackedNotes().length)) { gateShown = true; app.innerHTML = renderNotesGate(); return; }
+    notesGate = false; gateShown = false;
+    app.innerHTML = renderList(); updateFinish(); measureTop();
+  }
+  else if (screen === "done") app.innerHTML = renderDone();
+  else if (screen === "slow") app.innerHTML = renderSlow();
+}
+
+function topBar(title, sub, opts) {
+  opts = opts || {};
+  return `<div class="top"><div class="wrap">
+    <a class="back" href="${opts.backHref || "#"}" ${opts.backAct ? `data-act="${opts.backAct}"` : ""}>← ${opts.backLabel || "Menu"}</a>
+    <div class="ttl">${LOGO}<h1>${esc(title)}</h1>${sub ? `<div class="sub">${esc(sub)}</div>` : ""}</div>
+    ${opts.sync ? `<div class="sync${syncState === "ok" ? "" : " " + syncState}"><span class="dot"></span><span>${esc(syncLabel())}</span></div>` : ""}
+    <span class="storechip">${IC.pin}${esc(STORE)}</span>
+  </div>${opts.progress != null ? `<div class="wrap"><div class="progress"><i style="width:${opts.progress}%"></i></div></div>` : ""}</div>`;
+}
+
+function renderStorePick() {
+  return `<div class="wrap screen">
+    <h2>Which store is this tablet at?</h2>
+    <p class="lead">You only pick this once. The tablet remembers it.</p>
+    <div class="cards">${CONFIG.STORES.map(s => `<button class="bigcard c-store" data-act="setStore" data-v="${esc(s)}">${IC.pinBig}<span class="nm">${esc(s)}</span></button>`).join("")}</div>
+  </div>`;
+}
+
+function suggested() {
+  const h = Math.floor(minutesOf(Date.now()) / 60);
+  if (h < CONFIG.MORNING_UNTIL_HOUR) return "morning";
+  if (h >= CONFIG.CLOSING_FROM_HOUR) return "closing";
+  return "slow";
+}
+
+function renderPick() {
+  const sug = suggested();
+  const card = (id, cls, icon, name, desc) => `<button class="bigcard ${cls}" data-act="pickShift" data-v="${id}">
+    ${id === sug ? `<span class="badge">Suggested now</span>` : ""}${icon}<span class="nm">${name}</span><span class="ds">${desc}</span></button>`;
+  return topBar("Checklists", "Pick the one you're doing", { backHref: "index.html" }) + `<div class="wrap screen">
+    <div class="cards">
+      ${card("morning", "c-morning", IC.sun, "Opening", "7:00 arrival to 10:00 open")}
+      ${card("closing", "c-closing", IC.moon, "Closing", "Start one hour before clocking out")}
+      ${card("slow", "c-slow", IC.spark, "Keep It Moving", "No guest at the counter? Grab the next task")}
+    </div></div>`;
+}
+
+function nameChips(field, other) {
+  const o = String(other || "").trim().toLowerCase();
+  const list = NAMES.list().filter(n => !o || n.toLowerCase() !== o);
+  if (!list.length) return "";
+  const curv = String(crewDraft[field] || "").trim().toLowerCase();
+  return `<div class="nchips">${list.map(n => `<button type="button" class="nchip ${n.toLowerCase() === curv ? "on" : ""}" data-act="pickName" data-field="${field}" data-v="${esc(n)}">${esc(n)}</button>`).join("")}</div>`;
+}
+
+function renderCrew() {
+  const def = CHECKLISTS[cur.shift];
+  const known = NAMES.list().length > 0;
+  const field = (f, id, label, cls, who, hint) => `<div class="field"><label${cls ? ` class="${cls}"` : ""}>${label}</label>
+      ${nameChips(f, f === "front" ? (crewSolo ? "" : crewDraft.kitchen) : crewDraft.front)}
+      <input type="text" id="${id}" data-draft="${f}" placeholder="${known ? "Or type a new name" : "Type " + who + " name"}" autocapitalize="words" autocomplete="off" maxlength="40" enterkeyhint="${hint}" value="${esc(crewDraft[f])}"></div>`;
+  return topBar(def.name, "Who's working?", { backAct: "toPick", backLabel: "Back" }) + `<div class="wrap screen">
+    <h2>Who's on this ${cur.shift === "morning" ? "opening" : "close"}?</h2>
+    <p class="lead">${known ? "Tap your name." : "Your name goes on every task you check off."}</p>
+    <div class="form">
+      <button type="button" class="toggle ${crewSolo ? "on" : ""}" data-act="solo"><span class="sw"></span>Working alone today</button>
+      ${crewSolo ? field("front", "nFront", "Your name", "", "your", "go")
+        : field("front", "nFront", "Front", "f", "the Front person's", "next") + field("kitchen", "nKitchen", "Kitchen", "k", "the Kitchen person's", "go")}
+      ${crewErr ? `<div class="warn" style="margin:-4px 0 14px;font-size:17px">${esc(crewErr)}</div>` : ""}
+      <button class="primary" data-act="startShift" type="button">Start checklist</button>
+    </div></div>`;
+}
+
+function taskRow(t, sec, st, isNext) {
+  const kind = t.kind || (sec.who === "b" ? "anyone" : "check");
+  const c = crew();
+  const cls = ["task"];
+  if (st.done) cls.push("done");
+  if (st.skipped) cls.push("skipped");
+  if (!st.resolved && st.lateNow) cls.push("lateNow");
+  else if (!st.resolved && isNext) cls.push("next");
+  const tappable = !st.skipped && kind === "check";
+  if (tappable) cls.push("tap");
+
+  let meta = "";
+  if (st.skipped) meta = `<div class="meta">Skipped: ${esc(st.reason)} · ${esc(st.by)} <button class="undo" data-act="unskip" data-id="${t.id}">Undo skip</button></div>`;
+  else if (st.done) meta = `<div class="meta">✓ ${esc(st.by)} · ${fmt(st.at)}${st.late ? ` <span class="late">· late (due ${esc(t.due || t.time)})</span>` : ""}${kind !== "check" && kind !== "prep" ? ` <button class="undo" data-act="clearTask" data-id="${t.id}" data-sec="${sec.id}">Undo</button>` : ""}</div>`;
+
+  let ctrls = "";
+  if (!st.skipped) {
+    if (kind === "anyone" && !st.done) {
+      ctrls = c.solo
+        ? `<div class="ctrls"><button class="who b" data-act="anyone" data-id="${t.id}" data-who="f">Done</button></div>`
+        : `<div class="ctrls"><button class="who f" data-act="anyone" data-id="${t.id}" data-who="f">${esc(c.front)} did it</button><button class="who k" data-act="anyone" data-id="${t.id}" data-who="k">${esc(c.kitchen)} did it</button></div>`;
+    } else if (kind === "each" && !st.done) {
+      if (c.solo) ctrls = `<div class="ctrls"><button class="who b" data-act="part" data-id="${t.id}.solo" data-who="f">Done</button></div>`;
+      else {
+        const f = V(t.id + ".f"), k = V(t.id + ".k");
+        ctrls = `<div class="ctrls">
+          <button class="who f ${f ? "on" : ""}" data-act="part" data-id="${t.id}.f" data-who="f">${f ? "✓ " : ""}${esc(c.front)}</button>
+          <button class="who k ${k ? "on" : ""}" data-act="part" data-id="${t.id}.k" data-who="k">${k ? "✓ " : ""}${esc(c.kitchen)}</button></div>`;
+      }
+    } else if (kind === "buddy" && !st.done) {
+      if (c.solo) ctrls = `<div class="ctrls"><button class="who b" data-act="part" data-id="${t.id}.solo" data-who="f">I walked both stations</button></div>`;
+      else {
+        const f = V(t.id + ".f"), k = V(t.id + ".k");
+        ctrls = `<div class="ctrls">
+          <button class="who k ${f ? "on" : ""}" data-act="part" data-id="${t.id}.f" data-who="k">${f ? "✓ " : ""}${esc(c.kitchen)} checked Front</button>
+          <button class="who f ${k ? "on" : ""}" data-act="part" data-id="${t.id}.k" data-who="f">${k ? "✓ " : ""}${esc(c.front)} checked Kitchen</button></div>`;
+      }
+    } else if (kind === "temp") {
+      const who = sec.who === "b" ? "k" : sec.who;
+      let over = false;
+      ctrls = `<div class="temps">${CONFIG.FRIDGES.map((f, i) => {
+        const v = V("temp." + t.id + "." + i);
+        const val = v && typeof v.t === "number" ? v.t : "";
+        const o = val !== "" && val > CONFIG.TEMP_MAX; if (o) over = true;
+        return `<label class="temp ${o ? "over" : ""}"><span>${esc(f)}</span><input type="number" inputmode="decimal" step="0.1" data-temp="${t.id}" data-i="${i}" data-who="${who}" value="${val}" placeholder="°F"><span>°F</span></label>`;
+      }).join("")}</div>${over ? `<div class="warn">Above ${CONFIG.TEMP_MAX}°F: the owners have been emailed. Tell an owner too.</div>` : ""}`;
+    } else if (kind === "cash") {
+      const v = V(t.id);
+      ctrls = `<div class="cash"><b>$</b><input type="number" inputmode="decimal" step="0.01" data-cash="${t.id}" value="${v && typeof v.c === "number" ? v.c : ""}" placeholder="Cash counted"></div>`;
+    } else if (kind === "prep") {
+      const p = prepStatus();
+      ctrls = `<div class="ctrls" style="align-items:center"><a class="actbtn" href="prep.html?from=${cur.shift}">🥣 Open Prep List →</a>
+        <span class="prepsum">${p.total ? p.checked + " of " + p.total + " checked" + (p.need ? " · " + p.need + " to make" : "") : "Loading the list…"}</span></div>`;
+    } else if (kind === "grade") {
+      const v = V("grade");
+      if (st.done) {
+        const misses = GRADE_AREAS.filter(a => v.areas[a].g === "miss");
+        meta = `<div class="meta">✓ ${esc(st.by)} · ${fmt(st.at)} · ${misses.length ? `<span class="late">${misses.length} miss: ${esc(misses.join(", "))}</span>` : "all Pass"} <button class="undo" data-act="grade">Edit</button></div>`;
+      } else ctrls = `<div class="ctrls"><button class="actbtn" data-act="grade">Grade the close</button></div>`;
+    }
+  }
+
+  const skip = !st.resolved ? `<button class="skipbtn" data-act="skip" data-id="${t.id}" data-sec="${sec.id}">Skip</button>` : "";
+  return `<div class="${cls.join(" ")}" ${tappable ? `data-act="toggle" data-id="${t.id}" data-who="${sec.who}"` : ""}>
+    ${["check", "anyone"].includes(kind) || st.resolved ? `<div class="tbox">${st.skipped ? "–" : "✓"}</div>` : `<div class="tbox">✓</div>`}
+    <div class="tmain">
+      <div class="tline">${t.time ? `<span class="time">${esc(t.due && !st.resolved ? "by " + t.due : t.time)}</span>` : ""}<span class="tt">${esc(t.t)}</span></div>
+      <div class="td">${esc(t.d)}</div>${ctrls}${meta}
+    </div>${skip}</div>`;
+}
+
+function secBlock(sec) {
+  const c = crew();
+  const sts = sec.tasks.map(t => status(t, sec));
+  const left = sts.filter(s => !s.resolved).length;
+  const firstOpen = sts.findIndex(s => !s.resolved);
+  const whoName = sec.who === "k" ? c.kitchen : sec.who === "f" ? c.front : (c.solo ? c.front : "Both");
+  const hide = (sec.who === "k" && tab !== "k") || (sec.who === "f" && tab !== "f") ? "hideTab" : "";
+  return `<div class="sec ${sec.who} ${hide}">
+    <div class="sechead"><div><h3>${esc(sec.title)}</h3></div><div style="display:flex;gap:10px;align-items:center"><span class="secwho">${esc(whoName)}</span><span class="count">${left ? left + " left" : "✓ done"}</span></div></div>
+    ${sec.sub ? `<div class="secsub">${esc(sec.sub)}</div>` : ""}
+    ${sec.tasks.map((t, i) => taskRow(t, sec, sts[i], i === firstOpen)).join("")}
+  </div>`;
+}
+
+/* ---------- daily notes ---------- */
+function members() {
+  const c = crew(); if (!c) return [];
+  return c.solo ? [{ who: "solo", name: c.front }] : [{ who: "f", name: c.front }, { who: "k", name: c.kitchen }];
+}
+function acked(noteId, who) { return !!V("ack." + noteId + "." + who); }
+function unackedNotes() { return NOTES.filter(n => members().some(m => !acked(n.id, m.who))); }
+function noteItem(n, big) {
+  const ms = members();
+  return `<div class="nitem${n.handoff ? " handoff" : ""}"><div class="ntext">${esc(n.text)}</div><div class="nacks">${ms.map(m => acked(n.id, m.who)
+    ? (big ? `<button class="ack on" data-act="ack" data-id="${n.id}" data-who="${m.who}">✓ ${esc(m.name)} read it</button>` : `<span class="ackd">✓ ${esc(m.name)}</span>`)
+    : `<button class="ack" data-act="ack" data-id="${n.id}" data-who="${m.who}">${ms.length > 1 ? esc(m.name) + " · " : ""}Got it</button>`).join("")}</div></div>`;
+}
+function notesBox(big) {
+  if (!NOTES.length) return "";
+  return `<div class="notesbox"><h3>${IC.note} Today's notes</h3>${NOTES.map(n => noteItem(n, big)).join("")}</div>`;
+}
+function renderNotesGate() {
+  const def = CHECKLISTS[cur.shift];
+  const left = unackedNotes().length;
+  return topBar(def.name, "Read today's notes first", { backAct: "toPick", backLabel: "Back", sync: true }) + `<div class="wrap screen gate">
+    <h2>Before you start</h2>
+    <p class="lead">${members().length > 1 ? "Each of you taps <b>Got it</b> after reading." : "Tap <b>Got it</b> after reading."}</p>
+    ${notesBox(true)}
+    <div style="max-width:560px"><button class="primary" data-act="notesContinue" ${left ? "disabled" : ""}>${left ? "Tap Got it on every note to continue" : "Start the checklist →"}</button></div>
+  </div>`;
+}
+
+function renderList() {
+  const def = CHECKLISTS[cur.shift];
+  const c = crew();
+  const all = allTasks(def);
+  const done = all.filter(x => status(x.task, x.sec).resolved).length;
+  const pct = Math.round(done / all.length * 100);
+  ls.set("tccProgress:" + cur.key, { done, total: all.length, submitted: false });
+  let body = "", stations = [];
+  def.sections.forEach(sec => {
+    if (sec.who === "b") {
+      if (stations.length) { body += `<div class="stations">${stations.join("")}</div>`; stations = []; }
+      body += secBlock(sec);
+    } else stations.push(secBlock(sec));
+  });
+  if (stations.length) body += `<div class="stations">${stations.join("")}</div>`;
+
+  const kLeft = def.sections.filter(s => s.who === "k").reduce((n, s) => n + s.tasks.filter(t => !status(t, s).resolved).length, 0);
+  const fLeft = def.sections.filter(s => s.who === "f").reduce((n, s) => n + s.tasks.filter(t => !status(t, s).resolved).length, 0);
+
+  return topBar(def.name, done + " of " + all.length + " done", { backAct: "toPick", backLabel: "Back", sync: true, progress: pct }) + `<div class="wrap">
+    <div class="banner">
+      <div class="crew">${c.solo ? `<span class="pill b">${esc(c.front)} · alone</span>` : `<span class="pill f">Front · ${esc(c.front)}</span><span class="pill k">Kitchen · ${esc(c.kitchen)}</span>`}</div>
+      <button class="linkbtn" data-act="editCrew">Change</button>
+      <span class="rule">${esc(def.sub)}</span>
+    </div>
+    ${notesBox(false)}
+    <div class="tabs" id="tabs">
+      <button class="f ${tab === "f" ? "on" : ""}" data-act="tab" data-v="f">Front <span class="cnt">${fLeft ? "· " + fLeft + " left" : "✓"}</span></button>
+      <button class="k ${tab === "k" ? "on" : ""}" data-act="tab" data-v="k">Kitchen <span class="cnt">${kLeft ? "· " + kLeft + " left" : "✓"}</span></button>
+    </div>
+    ${body}
+    <p class="footnote">Check each task right after you finish it. Never sign off the other person's station for them.</p>
+  </div>`;
+}
+
+function measureTop() {
+  const top = document.querySelector(".top");
+  if (top) document.documentElement.style.setProperty("--topH", top.offsetHeight + "px");
+}
+
+function updateFinish() {
+  const def = CHECKLISTS[cur.shift];
+  const left = allTasks(def).filter(x => !status(x.task, x.sec).resolved).length;
+  $("bar").hidden = false;
+  const b = $("finishBtn");
+  b.disabled = left > 0;
+  b.textContent = left ? "Finish · " + left + " left (do it or skip with a reason)" : "Finish " + (cur.shift === "morning" ? "opening" : "closing") + " checklist ✓";
+}
+
+function renderDone() {
+  const def = CHECKLISTS[cur.shift];
+  const s = server.submitted || {};
+  ls.set("tccProgress:" + cur.key, { done: 1, total: 1, submitted: true });
+  return topBar(def.name, "Finished", { backHref: "index.html" }) + `<div class="wrap screen" style="text-align:center">
+    <div style="font-size:88px;color:var(--brand);display:grid;place-items:center">${IC.ok}</div>
+    <h2>${cur.shift === "morning" ? "Opening" : "Closing"} checklist finished</h2>
+    <p class="lead">${s.at ? "Finished at " + fmt(s.at) + (s.by ? " by " + esc(s.by) : "") + ". " : ""}The owners got the summary.</p>
+    ${cur.shift === "closing" ? `<p class="lead"><b>Last step: clock out on Gusto.</b></p>` : `<p class="lead"><b>Have a great shift!</b></p>`}
+    <div style="max-width:420px;margin:0 auto"><a class="primary" style="display:flex;align-items:center;justify-content:center;text-decoration:none" href="index.html">Back to menu</a></div>
+  </div>`;
+}
+
+function renderSlow() {
+  const day = weekday();
+  const deep = DEEP_CLEAN[day];
+  const secs = SLOW.map(s => s.deep ? Object.assign({}, s, { tasks: deep ? [{ id: "s.deep", t: deep.t, d: deep.d, deep: true }] : [] }) : s);
+  const flat = [];
+  secs.forEach(s => s.tasks.forEach(t => flat.push(t)));
+  // order for "next up": 1, then 4 (deep clean starts right after #1), then 2, 3, 5
+  const order = ["s1", "s4", "s2", "s3", "s5"];
+  let next = null;
+  order.some(id => { const s = secs.find(x => x.id === id); next = s.tasks.find(t => !V(t.id)); return !!next; });
+  const doneCount = flat.filter(t => V(t.id)).length;
+
+  const row = (t) => {
+    const it = ITEMS[t.id], d = it && it.v;
+    return `<div class="task tap ${d ? "done" : ""} ${next && next.id === t.id ? "next" : ""}" data-act="slowToggle" data-id="${t.id}" data-deep="${t.deep ? 1 : ""}">
+      <div class="tbox">✓</div><div class="tmain"><div class="tline"><span class="tt">${esc(t.t)}</span></div><div class="td">${esc(t.d)}</div>
+      ${d ? `<div class="meta">✓ ${it.by ? esc(it.by) + " · " : ""}${fmt(it.at)}</div>` : ""}</div></div>`;
+  };
+  const sec = s => `<div class="sec b"><div class="sechead"><h3>${esc(s.title)}</h3>${s.note ? `<span class="secwho">${esc(s.note)}</span>` : ""}</div>
+    ${s.tasks.length ? s.tasks.map(row).join("") : `<div class="secsub">No deep-clean job on ${["Sundays", "", "", "", "", "", ""][day] || "this day"}.</div>`}
+    ${s.request ? `<div class="secsub" style="border-top:1px solid var(--line)">Customer asked for something we don't have? Note it for the owners.</div>
+      <div class="reqrow"><input type="text" id="reqText" placeholder="e.g. gluten-free option, more seating" maxlength="300"><button class="actbtn" data-act="request">Send</button></div>` : ""}</div>`;
+
+  return topBar("Keep It Moving", "Any time no guest is at the counter, grab the next task.", { backAct: "toPick", backLabel: "Back", sync: true }) + `<div class="wrap">
+    ${next ? `<div class="nextup"><div><div class="lbl">Next up</div><div class="big">${esc(next.t)}</div><div class="d">${esc(next.d)}</div></div>
+      <button class="go" data-act="slowToggle" data-id="${next.id}" data-deep="${next.deep ? 1 : ""}">Done ✓</button></div>`
+      : `<div class="nextup"><div><div class="lbl">All caught up</div><div class="big">Everything's done 🎉</div><div class="d">Tell an owner or the group chat before sitting down.</div></div></div>`}
+    ${NOTES.length ? `<div class="notesbox"><h3>${IC.note} Today's notes</h3>${NOTES.map(n => `<div class="nitem"><div class="ntext">${esc(n.text)}</div></div>`).join("")}</div>` : ""}
+    ${(() => { const n = prepNeeds().filter(x => x.lvl !== "half").slice(0, 4); return n.length ? `<div class="makecard"><div><div class="lbl">🥣 Make next</div>
+      <div class="items">${n.map(x => `<span>${esc(x.name)} (${x.lvl === "out" ? "Out" : "Low"})</span>`).join(" · ")}</div></div>
+      <a class="actbtn" href="prep.html">Open Prep List →</a></div>` : ""; })()}
+    <div class="banner"><b>Customers always come first.</b> Phones stay away. Never leave the front unattended while you work in the kitchen.
+      ${doneCount ? `<button class="linkbtn" data-act="slowReset" style="margin-left:auto">Start the list over</button>` : ""}</div>
+    <div class="slowgrid"><div>${sec(secs[0])}${sec(secs[3])}${sec(secs[4])}</div><div>${sec(secs[1])}${sec(secs[2])}</div></div>
+  </div>`;
+}
+
+/* ---------- modals + toast ---------- */
+function openModal(html) { $("modal").innerHTML = html; $("overlay").classList.add("show"); }
+function closeModal() { $("overlay").classList.remove("show"); }
+$("overlay").addEventListener("click", e => { if (e.target.id === "overlay") closeModal(); });
+
+let toastTimer, toastUndo;
+function toast(text, undo) {
+  $("toastText").textContent = text;
+  toastUndo = undo;
+  $("toastBtn").style.display = undo ? "" : "none";
+  $("toast").classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $("toast").classList.remove("show"), 5000);
+}
+$("toastBtn").addEventListener("click", () => { if (toastUndo) toastUndo(); toastUndo = null; $("toast").classList.remove("show"); });
+
+let skipDraft = null;
+const REASONS = [
+  { r: "ran", label: "📦 Ran out of something" },
+  { r: "broken", label: "🔧 Something's broken" },
+  { r: "time", label: "⏱️ Not enough time" },
+  { r: "other", label: "✏️ Other" }
+];
+function skipModal(id, secId) { skipDraft = { id, secId, r: "", item: "", note: "", alert: true }; drawSkip(); }
+function drawSkip() {
+  const d = skipDraft;
+  const sec = CHECKLISTS[cur.shift].sections.find(x => x.id === d.secId);
+  const t = sec.tasks.find(x => x.id === d.id);
+  const needsItem = d.r === "ran" || d.r === "broken";
+  openModal(`<h3>Skip "${esc(t.t)}"?</h3><p>Why? Tap one. The owners see this in the shift summary.</p>
+    <div class="reasons">${REASONS.map(x => `<button type="button" class="reason ${d.r === x.r ? "on" : ""}" data-mact="reason" data-r="${x.r}">${x.label}</button>`).join("")}</div>
+    ${needsItem ? `<label class="mlabel" for="skipItem">${d.r === "ran" ? "What ran out?" : "What's broken?"}</label>
+      <input type="text" id="skipItem" data-skip="item" placeholder="${d.r === "ran" ? "e.g. trash liners" : "e.g. mop bucket"}" maxlength="100" value="${esc(d.item)}">
+      <button type="button" class="toggle ${d.alert ? "on" : ""}" data-mact="skipAlert" style="margin:12px 0 0"><span class="sw"></span>Also send a staff alert to the owners</button>` : ""}
+    ${d.r === "time" || d.r === "other" ? `<label class="mlabel" for="skipNote">${d.r === "other" ? "What happened?" : "Anything to add? (optional)"}</label>
+      <textarea id="skipNote" data-skip="note" maxlength="200" placeholder="${d.r === "other" ? "Tell the owners why" : "Optional"}">${esc(d.note)}</textarea>` : ""}
+    <div class="row"><button class="ghost" data-mact="cancel">Cancel</button><button class="primary" data-mact="doSkip" ${d.r ? "" : "disabled"} style="min-height:54px;font-size:19px">${needsItem && d.alert ? "Skip & send alert" : "Skip"}</button></div>`);
+  const f = $("skipItem") || $("skipNote");
+  if (f && !f.value) setTimeout(() => f.focus(), 50);
+}
+
+let gradeDraft = {};
+function gradeModal() {
+  const v = V("grade");
+  gradeDraft = JSON.parse(JSON.stringify((v && v.areas) || {}));
+  drawGrade();
+}
+function drawGrade() {
+  openModal(`<h3>Grade last night's close</h3><p>Pass or Miss for each. A Miss needs a quick note. Misses go to the owners.</p>
+    ${GRADE_AREAS.map(a => { const g = gradeDraft[a] || {}; return `<div class="garea"><div class="gtop"><span class="gname">${a}</span>
+      <button class="gbtn pass ${g.g === "pass" ? "on" : ""}" data-mact="g" data-a="${a}" data-g="pass">Pass</button>
+      <button class="gbtn miss ${g.g === "miss" ? "on" : ""}" data-mact="g" data-a="${a}" data-g="miss">Miss</button></div>
+      ${g.g === "miss" ? `<input type="text" data-gnote="${a}" placeholder="What was missed?" maxlength="120" value="${esc(g.n || "")}">` : ""}</div>`; }).join("")}
+    <div class="row"><button class="ghost" data-mact="cancel">Cancel</button><button class="primary" data-mact="saveGrade" style="min-height:54px;font-size:19px">Save grades</button></div>`);
+}
+
+/* ---------- actions ---------- */
+function openShift(shift) {
+  cur = { shift, date: today() };
+  cur.key = STORE + "|" + cur.date + "|" + shift;
+  server = ls.get(stateKey(), { items: {}, submitted: null });
+  pending = ls.get(pendKey(), []);
+  NOTES = ls.get("tccNotes:" + STORE, []);
+  notesGate = true; gateShown = false;
+  merge();
+  if (shift === "slow") screen = "slow";
+  else if (server.submitted) screen = "done";
+  else if (crew()) screen = "list";
+  else { crewSolo = false; crewDraft = { front: "", kitchen: "" }; crewErr = ""; screen = "crew"; }
+  render();
+  window.scrollTo(0, 0);
+  keepAwake();
+  PREP = ls.get("tccPrep:" + STORE, PREP);
+  fetchPrep();
+  sync().then(() => {
+    if (screen === "crew" && crew()) { screen = "list"; safeRender(); }  // someone already started it on another device
+  });
+}
+
+function cleanupOld() {
+  try {
+    const t = today();
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (!/^tcc(State|Pending|Progress):/.test(k)) continue;
+      const date = k.split("|")[1];
+      if (date && date < t) {
+        if (k.startsWith("tccPending:") && (ls.get(k, []) || []).length) continue;
+        localStorage.removeItem(k);
+      }
+    }
+  } catch (e) {}
+}
+
+document.addEventListener("click", e => {
+  const m = e.target.closest("[data-mact]");
+  if (m) return modalAction(m);
+  const el = e.target.closest("[data-act]");
+  if (!el || !$("app").contains(el)) return;
+  const act = el.dataset.act, id = el.dataset.id;
+  const c = crew();
+
+  if (act === "setStore") { STORE = el.dataset.v; ls.set("tccStore", STORE); render(); }
+  else if (act === "pickShift") openShift(el.dataset.v);
+  else if (act === "toPick") { e.preventDefault(); letSleep(); cur = null; screen = "pick"; render(); window.scrollTo(0, 0); }
+  else if (act === "solo") { crewSolo = !crewSolo; crewErr = ""; render(); }
+  else if (act === "startShift") startShift();
+  else if (act === "pickName") {
+    const f = el.dataset.field, v = el.dataset.v;
+    crewDraft[f] = crewDraft[f] === v ? "" : v;
+    crewErr = ""; render();
+  }
+  else if (act === "editCrew") { const p = V("people") || {}; crewSolo = !!p.solo; crewDraft = { front: p.front || "", kitchen: p.solo ? "" : p.kitchen || "" }; crewErr = ""; screen = "crew"; render(); }
+  else if (act === "tab") { tab = el.dataset.v; render(); }
+  else if (act === "toggle") {
+    const st = ITEMS[id] && ITEMS[id].v;
+    const who = el.dataset.who;
+    if (st && st.d) setItem(id, null, personFor(who), "Unchecked");
+    else setItem(id, { d: 1 }, personFor(who), "Checked off by " + personFor(who));
+  }
+  else if (act === "anyone") setItem(id, { d: 1 }, personFor(el.dataset.who), "Checked off by " + personFor(el.dataset.who));
+  else if (act === "part") {
+    const on = V(id);
+    setItem(id, on ? null : { d: 1 }, personFor(el.dataset.who), on ? "Unchecked" : "Checked by " + personFor(el.dataset.who));
+  }
+  else if (act === "clearTask") {
+    const def = CHECKLISTS[cur.shift];
+    const sec = def.sections.find(s => s.id === el.dataset.sec);
+    const t = sec.tasks.find(x => x.id === id);
+    const kind = t.kind || (sec.who === "b" ? "anyone" : "check");
+    const by = personFor(sec.who);
+    if (kind === "each" || kind === "buddy") [".f", ".k", ".solo"].forEach(s => { if (V(id + s)) setItem(id + s, null, by); });
+    else if (kind === "temp") CONFIG.FRIDGES.forEach((f, i) => setItem("temp." + id + "." + i, null, by));
+    else setItem(id, null, by);
+    toast("Unchecked");
+  }
+  else if (act === "skip") skipModal(id, el.dataset.sec);
+  else if (act === "unskip") setItem("skip." + id, null, "", "Skip removed");
+  else if (act === "grade") gradeModal();
+  else if (act === "slowToggle") {
+    const on = V(id);
+    if (on) setItem(id, null, "", "Unchecked");
+    else if (el.dataset.deep) {
+      openModal(`<h3>Who did the deep clean?</h3><p>${esc(DEEP_CLEAN[weekday()].t)}</p>
+        ${NAMES.list().length ? `<div class="nchips">${NAMES.list().map(n => `<button type="button" class="nchip" data-mact="deepPick" data-id="${id}" data-v="${esc(n)}">${esc(n)}</button>`).join("")}</div>` : ""}
+        <input type="text" id="deepName" placeholder="${NAMES.list().length ? "Or type your name" : "Your name"}" autocapitalize="words" maxlength="40">
+        <div class="row"><button class="ghost" data-mact="cancel">Cancel</button><button class="primary" data-mact="deepDone" data-id="${id}" style="min-height:54px;font-size:19px">Done ✓</button></div>`);
+      setTimeout(() => $("deepName") && $("deepName").focus(), 50);
+    }
+    else setItem(id, { d: 1 }, "", "Nice. On to the next one.");
+  }
+  else if (act === "slowReset") {
+    openModal(`<h3>Start the list over?</h3><p>Clears the checks so the list starts from the top again. Today's deep clean stays done.</p>
+      <div class="row"><button class="ghost" data-mact="cancel">Cancel</button><button class="primary" data-mact="doReset" style="min-height:54px;font-size:19px">Start over</button></div>`);
+  }
+  else if (act === "request") sendRequest();
+  else if (act === "ack") {
+    const n = NOTES.find(x => x.id === id); if (!n) return;
+    const m = members().find(x => x.who === el.dataset.who); if (!m) return;
+    const on = acked(id, m.who);
+    setItem("ack." + id + "." + m.who, on ? null : { ack: 1, n: n.text.slice(0, 120) }, m.name, on ? "Unmarked" : "Thanks, " + m.name);
+  }
+  else if (act === "notesContinue") { if (unackedNotes().length) return; notesGate = false; gateShown = false; render(); window.scrollTo(0, 0); }
+});
+
+function modalAction(el) {
+  const a = el.dataset.mact;
+  if (a === "cancel") return closeModal();
+  if (a === "reason") { skipDraft.r = el.dataset.r; drawSkip(); }
+  if (a === "skipAlert") { skipDraft.alert = !skipDraft.alert; drawSkip(); }
+  if (a === "doSkip") {
+    const d = skipDraft; if (!d || !d.r) return;
+    const item = d.item.trim(), note = d.note.trim();
+    const needsItem = d.r === "ran" || d.r === "broken";
+    if (needsItem && !item) { toast(d.r === "ran" ? "Type what ran out" : "Type what's broken"); return; }
+    if (d.r === "other" && note.length < 3) { toast("Add a short reason so the owners know why"); return; }
+    const reason = d.r === "ran" ? "Ran out of " + item : d.r === "broken" ? item + " is broken" : d.r === "time" ? "Not enough time" + (note ? " — " + note : "") : note;
+    const def = CHECKLISTS[cur.shift];
+    const sec = def.sections.find(x => x.id === d.secId);
+    const t = sec.tasks.find(x => x.id === d.id);
+    const by = personFor(sec.who);
+    closeModal();
+    skipDraft = null;
+    setItem("skip." + d.id, { s: reason }, by, needsItem && d.alert ? "" : "Skipped");
+    if (needsItem && d.alert) sendAlert({ type: d.r === "ran" ? "Completely Out" : "Broken", item, name: by, notes: "Skipped on the " + def.name.toLowerCase() + ": " + t.t });
+  }
+  if (a === "g") { gradeDraft[el.dataset.a] = Object.assign({}, gradeDraft[el.dataset.a], { g: el.dataset.g }); keepNotes(); drawGrade(); }
+  if (a === "saveGrade") {
+    keepNotes();
+    const missing = GRADE_AREAS.filter(x => !gradeDraft[x] || !gradeDraft[x].g);
+    if (missing.length) { toast("Grade every area: " + missing.join(", ")); return; }
+    const noNote = GRADE_AREAS.filter(x => gradeDraft[x].g === "miss" && !(gradeDraft[x].n || "").trim());
+    if (noNote.length) { toast("Add a note for: " + noNote.join(", ")); return; }
+    const areas = {};
+    GRADE_AREAS.forEach(x => { areas[x] = gradeDraft[x].g === "miss" ? { g: "miss", n: gradeDraft[x].n.trim().slice(0, 120) } : { g: "pass" }; });
+    closeModal();
+    setItem("grade", { areas }, personFor("b"), "Grades saved");
+  }
+  if (a === "deepPick") { closeModal(); NAMES.add(el.dataset.v); setItem(el.dataset.id, { d: 1 }, el.dataset.v, "Deep clean logged. Thank you!"); return; }
+  if (a === "deepDone") {
+    const n = matchName($("deepName").value);
+    if (!n) { toast("Type your name"); return; }
+    closeModal();
+    NAMES.add(n);
+    setItem(el.dataset.id, { d: 1 }, n, "Deep clean logged. Thank you!");
+  }
+  if (a === "doReset") {
+    closeModal();
+    Object.keys(ITEMS).forEach(id => { if (/^s\./.test(id) && id !== "s.deep" && V(id)) setItem(id, null, ""); });
+    toast("List cleared");
+  }
+  if (a === "confirmFinish") doFinish();
+}
+function keepNotes() {
+  document.querySelectorAll("[data-gnote]").forEach(i => { const a = i.dataset.gnote; gradeDraft[a] = Object.assign({}, gradeDraft[a], { n: i.value }); });
+}
+
+document.addEventListener("change", e => {
+  const el = e.target;
+  if (el.dataset.temp) {
+    const id = "temp." + el.dataset.temp + "." + el.dataset.i;
+    const raw = el.value.trim();
+    const label = CONFIG.FRIDGES[+el.dataset.i];
+    if (raw === "") { setItem(id, null, personFor(el.dataset.who)); return; }
+    const t = Math.round(parseFloat(raw) * 10) / 10;
+    if (isNaN(t) || t < -30 || t > 120) { toast("That temp doesn't look right"); return; }
+    setItem(id, { t, label }, personFor(el.dataset.who), label + ": " + t + "°F saved");
+  }
+  if (el.dataset.cash) {
+    const raw = el.value.trim();
+    if (raw === "") { setItem(el.dataset.cash, null, personFor("f")); return; }
+    const c = Math.round(parseFloat(raw) * 100) / 100;
+    if (isNaN(c) || c < 0) { toast("Enter the cash amount"); return; }
+    setItem(el.dataset.cash, { c }, personFor("f"), "Cash count saved");
+  }
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Enter" && (e.target.dataset.temp || e.target.dataset.cash)) e.target.blur();
+  if (e.key === "Enter" && e.target.id === "reqText") sendRequest();
+  if (e.key === "Enter" && e.target.dataset.draft) {
+    e.preventDefault();
+    if (e.target.id === "nFront" && $("nKitchen")) $("nKitchen").focus(); else { e.target.blur(); startShift(); }
+  }
+});
+
+async function sendRequest() {
+  const text = ($("reqText").value || "").trim();
+  if (!text) return;
+  try {
+    const r = await post({ action: "request", store: STORE, text });
+    if (r.ok) { $("reqText").value = ""; toast("Sent to the owners. Thanks!"); }
+    else toast("Couldn't send: " + (r.error || "error"));
+  } catch (e) { toast("No connection. Try again in a minute."); }
+}
+
+function startShift() {
+  const front = matchName(crewDraft.front);
+  const kitchen = crewSolo ? "" : matchName(crewDraft.kitchen);
+  if (!front || (!crewSolo && !kitchen)) {
+    crewErr = crewSolo ? "Type your name first." : (!front && !kitchen ? "Type both names first." : !front ? "Type the Front person's name." : "Type the Kitchen person's name.");
+    render(); return;
+  }
+  crewErr = "";
+  NAMES.add(front, kitchen);
+  setItem("people", { front, kitchen, solo: crewSolo }, front);
+  screen = "list"; tab = "f"; notesGate = true; render(); window.scrollTo(0, 0);
+}
+document.addEventListener("input", e => {
+  if (e.target.dataset.draft) crewDraft[e.target.dataset.draft] = e.target.value;
+  if (e.target.dataset.skip && skipDraft) skipDraft[e.target.dataset.skip] = e.target.value;
+});
+
+/* ---------- finish ---------- */
+$("finishBtn").addEventListener("click", () => {
+  const c = crew();
+  openModal(`<div class="big">${IC.flag}</div><h3 style="text-align:center">Finish the ${cur.shift === "morning" ? "opening" : "closing"} checklist?</h3>
+    <p style="text-align:center">${c.solo ? esc(c.front) : esc(c.front) + " & " + esc(c.kitchen)} — the owners get a summary with who did what and when.</p>
+    <div class="row"><button class="ghost" data-mact="cancel">Not yet</button><button class="primary" data-mact="confirmFinish" style="min-height:54px;font-size:19px;background:var(--done)">Finish ✓</button></div>`);
+});
+
+function buildSummary() {
+  const def = CHECKLISTS[cur.shift];
+  const c = crew();
+  const tasks = [], temps = [], misses = [], flags = [];
+  let cash = "", started = Infinity;
+  const doneTimes = [];
+  allTasks(def).forEach(({ task, sec }) => {
+    const st = status(task, sec);
+    if (st.at) { started = Math.min(started, st.at); if (st.done) doneTimes.push(st.at); }
+    tasks.push({ section: sec.title, t: task.t, status: st.skipped ? "skipped" : "done", by: st.by,
+      at: st.at ? fmt(st.at) : "", late: !!st.late, due: task.due || task.time || "", reason: st.reason || "" });
+    if (task.kind === "temp") CONFIG.FRIDGES.forEach((f, i) => { const v = V("temp." + task.id + "." + i); if (v) temps.push({ label: f, t: v.t }); });
+    if (task.kind === "cash") { const v = V(task.id); if (v) cash = v.c; }
+    if (task.kind === "grade") { const v = V("grade"); if (v && v.areas) GRADE_AREAS.forEach(a => { if (v.areas[a].g === "miss") misses.push({ area: a, note: v.areas[a].n }); }); }
+  });
+  // Lots of tasks checked within 2 minutes usually means they were checked at the end, not as done
+  doneTimes.sort((a, b) => a - b);
+  let maxBurst = 0;
+  for (let i = 0, j = 0; i < doneTimes.length; i++) { while (doneTimes[i] - doneTimes[j] > 120000) j++; maxBurst = Math.max(maxBurst, i - j + 1); }
+  if (maxBurst >= 8) flags.push(maxBurst + " tasks were checked off within 2 minutes of each other");
+  if (temps.some(t => t.t > CONFIG.TEMP_MAX)) flags.push("A fridge was above " + CONFIG.TEMP_MAX + "°F");
+  return { front: c.front, kitchen: c.solo ? "" : c.kitchen, solo: c.solo, started: started < Infinity ? fmt(started) : "",
+    finishedBy: c.solo ? c.front : c.front + " & " + c.kitchen, tasks, temps, misses, cash, flags,
+    notesRead: NOTES.map(n => {
+      const who = members().filter(m => acked(n.id, m.who)).map(m => m.name);
+      return n.text.slice(0, 80) + (n.text.length > 80 ? "…" : "") + " — " + (who.length ? who.join(", ") : "not marked read");
+    }) };
+}
+
+async function doFinish() {
+  const btn = document.querySelector('[data-mact="confirmFinish"]');
+  if (btn) { btn.disabled = true; btn.textContent = "Sending…"; }
+  try {
+    await sync();
+    if (pending.length) throw new Error("offline");
+    const r = await post({ action: "submit", store: STORE, date: cur.date, shift: cur.shift, summary: buildSummary() }, 30000);
+    if (!r.ok) throw new Error(r.error || "error");
+    server = r.state; ls.set(stateKey(), server);
+    closeModal();
+    screen = "done"; render(); window.scrollTo(0, 0);
+  } catch (e) {
+    closeModal();
+    openModal(`<div class="big">${IC.wifi}</div><h3 style="text-align:center">Couldn't finish yet</h3>
+      <p style="text-align:center">${e.message === "offline" ? "The tablet isn't online. Everything you checked is saved. Try Finish again once the Wi‑Fi is back." : "The server said: " + esc(e.message) + ". Tell an owner."}</p>
+      <div class="row"><button class="primary" data-mact="cancel" style="min-height:54px;font-size:19px">OK</button></div>`);
+  }
+}
+
+/* ---------- start ---------- */
+window.addEventListener("error", e => toast("Something went wrong: " + (e.message || "error") + ". Send a screenshot to an owner."));
+cleanupOld();
+const qs = new URLSearchParams(location.search).get("c");
+if (STORE && qs && (qs === "slow" || CHECKLISTS[qs])) openShift(qs);
+else render();
+</script>
+</body>
+</html>
