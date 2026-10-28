@@ -79,6 +79,7 @@
   .lv.low.on  { background: var(--low);  border-color: var(--low);  color: #fff; }
   .lv.out.on  { background: var(--out);  border-color: var(--out);  color: #fff; }
   .empty { color: var(--muted); padding: 14px 4px; font-size: 16px; }
+  .rcp { display: inline-block; vertical-align: middle; margin-left: 6px; font-size: 14px; font-weight: 800; color: var(--brand); text-decoration: none; background: #eef4f0; border: 2px solid #bccfc5; border-radius: 10px; padding: 3px 9px; white-space: nowrap; }
   .levels.three { grid-template-columns: repeat(3, 76px); justify-content: end; }
   .uses { display: inline-block; margin-top: 6px; background: #f3effd; color: #5a47b8; border-radius: 10px; padding: 4px 10px; font-size: 14px; font-weight: 700; }
   .sname .for { display: block; font-size: 14px; font-weight: 700; color: #5a47b8; margin-top: 2px; }
@@ -141,7 +142,7 @@ const CONFIG = {
   ENDPOINT: "https://script.google.com/macros/s/AKfycbygeoLlirc5Ot1x6pK4_xFiqFNZ50jCy3Bx0TeJ8DaCH8_QKp8AoJr9bWvp-fMX78Nm/exec",
   TOKEN: "Bonnie",
   STORES: ["Fort Walton Beach", "Miramar Beach"],
-  RECIPE_BOOK: "https://claude.ai/code/artifact/c637f31d-cb4d-4327-9327-bed881dbd5e6"
+  RECIPE_BOOK: "recipes.html"
 };
 const TZ = "America/Chicago";
 const LEVELS = [
@@ -323,6 +324,7 @@ function safeRender() {
 }
 document.addEventListener("focusout", () => setTimeout(() => { if (dirty) { dirty = false; render(); } }, 50));
 
+function recipeLink(i) { return CONFIG.RECIPE_BOOK + "#find=" + encodeURIComponent(i.name); }
 function render() {
   $("storeName").textContent = STORE ? "📍 " + STORE : "";
   const lv = merged();
@@ -341,7 +343,7 @@ function render() {
     : need.length ? need.map((i, n) => {
         const l = lv[i.id];
         return `<div class="prow"><span class="rank" style="background:${COLOR[l.lvl]}">${n + 1}</span>
-          <div class="pname"><b>${esc(i.name)}</b><small>${i.type === "frosting" ? "🧁 Frosting for " + esc((i.for || []).map(d => nameOf[d]).filter(Boolean).join(", ")) : i.type === "monthly" ? "Monthly dough" : "Dough"} · marked by ${esc(l.by || "staff")} ${ago(l.at)}</small></div>
+          <div class="pname"><b>${esc(i.name)} <a class="rcp" href="${recipeLink(i)}">📖 Recipe</a></b><small>${i.type === "frosting" ? "🧁 Frosting for " + esc((i.for || []).map(d => nameOf[d]).filter(Boolean).join(", ")) : i.type === "monthly" ? "Monthly dough" : "Dough"} · marked by ${esc(l.by || "staff")} ${ago(l.at)}</small></div>
           <span class="pill" style="background:${COLOR[l.lvl]}">${l.lvl}</span>
           <button type="button" class="made" data-made="${i.id}">Made it ✓</button></div>`;
       }).join("")
@@ -359,7 +361,7 @@ function render() {
         const l = lv[i.id];
         const fresh = l && dayOf(l.at) === t;
         const sub = i.type === "frosting" ? `<span class="for">For ${esc((i.for || []).map(d => nameOf[d]).filter(Boolean).join(", "))}</span>` : "";
-        return `<div class="srow"><div class="sname"><b>${esc(i.name)}</b>${sub}
+        return `<div class="srow"><div class="sname"><b>${esc(i.name)}</b> <a class="rcp" href="${recipeLink(i)}">📖 Recipe</a>${sub}
           <small class="${fresh ? "" : "stale"}">${l ? (fresh ? "✓ " : "⚠️ Not checked today · last ") + esc(l.by || "staff") + " " + ago(l.at) : "⚠️ Not checked yet"}</small></div>
           <div class="levels${opts.length === 3 ? " three" : ""}">${opts.map(x => `<button type="button" class="lv ${x.id} ${l && l.lvl === x.id ? "on" : ""}" data-id="${i.id}" data-lvl="${x.id}">${x.label}</button>`).join("")}</div></div>`;
       }).join("") : `<div class="empty">No monthly flavors set yet. Owners add them on the Owner page.</div>`}</div>`;
