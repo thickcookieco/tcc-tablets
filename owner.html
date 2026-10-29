@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#111111">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
 <title>Owner</title>
 <style>
   :root {
@@ -76,8 +80,15 @@
   .modal p { margin: 0 0 16px; color: var(--muted); }
   .modal .row { display: flex; gap: 10px; }
   .modal .row button { flex: 1; min-height: 52px; border-radius: 14px; font-weight: 800; font-size: 17px; }
-  .tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
-  @media (max-width: 560px) { .tabs { grid-template-columns: repeat(2, 1fr); } }
+  .tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 16px; }
+  @media (max-width: 760px) { .tabs { grid-template-columns: repeat(2, 1fr); } .tabs .tab:last-child { grid-column: 1 / -1; } }
+  .tprow { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; padding: 14px; margin-bottom: 10px; border: 2px solid var(--line); border-radius: 16px; background: #fff; }
+  .tprow .tn { flex: 1; min-width: 0; }
+  .tprow b { font-size: 19px; display: block; }
+  .tprow small { color: var(--muted); font-size: 14px; font-weight: 600; }
+  .tprow .tbar { height: 10px; border-radius: 99px; background: #e3ebe6; overflow: hidden; margin-top: 8px; }
+  .tprow .tbar i { display: block; height: 100%; background: var(--brand); }
+  .tprow .tp { font-size: 22px; font-weight: 900; color: var(--brand); }
   .seenchips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
   .seenchips button { min-height: 46px; padding: 0 14px; border-radius: 12px; border: 2px dashed var(--brand); background: #fff; color: var(--brand); font-weight: 800; font-size: 16px; }
   .tab { font-size: 16px !important; padding: 0 6px; }
@@ -111,6 +122,8 @@
   .tab { min-height: 58px; border-radius: 16px; border: 2px solid var(--line); background: #fff; font-size: 18px; font-weight: 800; color: var(--muted); }
   .tab.on { background: var(--brand); border-color: var(--brand); color: #fff; }
   .hint { color: var(--muted); font-size: 14px; margin: 6px 2px 0; }
+  .photosbtn { display: flex; flex-direction: column; align-items: flex-start; width: 100%; min-height: 58px; margin: -6px 0 16px; padding: 10px 16px; border: none; border-radius: 16px; background: #ffd23f; color: #1f2b25; font-size: 18px; font-weight: 800; text-align: left; cursor: pointer; }
+  .photosbtn span { font-size: 14px; font-weight: 600; }
   .rlink { display: inline-block; margin-top: 10px; text-decoration: none; font-weight: 800; font-size: 15px; color: var(--brand); background: #eef4f0; border: 2px solid #bccfc5; border-radius: 12px; padding: 8px 14px; }
   #tabPrep textarea { min-height: 150px; font-size: 18px; line-height: 1.45; }
   .ok-msg { color: var(--green); font-weight: 700; margin-top: 10px; min-height: 20px; }
@@ -143,7 +156,9 @@
       <button type="button" class="tab" data-tab="Notes">📌 Notes</button>
       <button type="button" class="tab" data-tab="Prep">🥣 Prep List</button>
       <button type="button" class="tab" data-tab="Staff">👥 Staff</button>
+      <button type="button" class="tab" data-tab="Training">🎓 Training</button>
     </div>
+    <button type="button" class="photosbtn" id="photosBtn">📷 Recipe photos <span>Add or change photos in the recipe book</span></button>
     <div id="tabToday">
       <div class="refresh"><span id="todayAt">Loading…</span><button type="button" id="todayRefresh">↻ Refresh</button></div>
       <div id="toOrder"></div>
@@ -191,6 +206,14 @@
     </div>
 
     <!-- Staff names: the only name buttons tablets show -->
+    <div id="tabTraining" hidden>
+      <section class="card">
+        <h2>Training progress</h2>
+        <p class="hint" style="margin-top:0">Tap someone to sign off their skills. New names come from the Staff tab.</p>
+        <div id="trainList"><div class="hint">Loading…</div></div>
+      </section>
+    </div>
+
     <div id="tabStaff" hidden>
       <section class="card">
         <h2>Staff names</h2>
@@ -267,7 +290,8 @@ function niceTime(ms) {
 }
 function toast(t) { $("toast").textContent = t; $("toast").classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => $("toast").classList.remove("show"), 2500); }
 
-let code = ls.get("tccOwnerCode") || "";
+// signed in for this visit too (so coming back from Training or Recipe photos doesn't ask again)
+let code = ls.get("tccOwnerCode") || (function () { try { return sessionStorage.getItem("tccOwnerSession") || ""; } catch (e) { return ""; } })();
 let notes = [];
 let form = { id: null, store: "Both", when: "today" };
 
@@ -294,10 +318,11 @@ async function login() {
   $("loginBtn").disabled = false; $("loginBtn").textContent = "Sign in";
   if (!r.ok) {
     $("loginErr").textContent = r.error;
-    if (r.error === "Wrong owner code") { code = ""; ls.del("tccOwnerCode"); }
+    if (r.error === "Wrong owner code") { code = ""; ls.del("tccOwnerCode"); try { sessionStorage.removeItem("tccOwnerSession"); } catch (e) {} }
     showLogin(); return;
   }
   if ($("remember").checked) ls.set("tccOwnerCode", code);
+  try { sessionStorage.setItem("tccOwnerSession", code); } catch (e) {}
   notes = r.notes;
   showMain();
 }
@@ -305,11 +330,11 @@ function showLogin() { $("login").hidden = false; $("main").hidden = true; $("lo
 function showMain() {
   $("login").hidden = true; $("main").hidden = false; $("logout").hidden = false; renderNotes();
   let t = ""; try { t = localStorage.getItem("tccOwnerTab"); } catch (e) {}
-  document.querySelector('[data-tab="' + (["Prep", "Notes", "Staff"].includes(t) ? t : "Today") + '"]').click();
+  document.querySelector('[data-tab="' + (["Prep", "Notes", "Staff", "Training"].includes(t) ? t : "Today") + '"]').click();
 }
 $("loginBtn").addEventListener("click", login);
 $("code").addEventListener("keydown", e => { if (e.key === "Enter") login(); });
-$("logout").addEventListener("click", () => { code = ""; ls.del("tccOwnerCode"); $("code").value = ""; resetForm(); showLogin(); });
+$("logout").addEventListener("click", () => { code = ""; ls.del("tccOwnerCode"); try { sessionStorage.removeItem("tccOwnerSession"); } catch (e) {} $("code").value = ""; resetForm(); showLogin(); });
 
 /* ---------- form ---------- */
 function pick(group, attr, value) {
@@ -433,11 +458,34 @@ document.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click",
   $("tabNotes").hidden = t !== "Notes";
   $("tabPrep").hidden = t !== "Prep";
   $("tabStaff").hidden = t !== "Staff";
+  $("tabTraining").hidden = t !== "Training";
+  if (t === "Training") loadTraining();
   if (t === "Today") loadToday();
   if (t === "Staff") loadStaff();
   try { localStorage.setItem("tccOwnerTab", t); } catch (e) {}
   if (t === "Prep" && !prepLoaded) loadPrep();
 }));
+
+/* ---------- training progress ---------- */
+async function loadTraining() {
+  const r = await call({ action: "training" });
+  if (!r.ok) { $("trainList").innerHTML = `<div class="err">${esc(r.error || "Couldn't load")}</div>`; return; }
+  const skills = r.stages.reduce((a, s) => a.concat(s.skills), []);
+  $("trainList").innerHTML = r.people.length ? r.people.map(p => {
+    const done = p.done || {}, n = skills.filter(k => done[k.id]).length, pct = skills.length ? Math.round(n * 100 / skills.length) : 0;
+    const cur = r.stages.find(s => s.skills.some(k => !done[k.id]));
+    const last = Object.values(done).reduce((m, d) => Math.max(m, d.at || 0), 0);
+    return `<button type="button" class="tprow" data-train="${esc(p.name)}"><div class="tn"><b>${esc(p.name)}</b>
+      <small>${!cur ? "🎓 Fully trained" : n === 0 ? "Not started" : "Now: " + esc(cur.icon + " " + cur.name)}${last ? " · last sign-off " + new Date(last).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}</small>
+      <div class="tbar"><i style="width:${pct}%"></i></div></div><span class="tp">${pct}%</span></button>`;
+  }).join("") : `<div class="hint">No staff yet. Add names on the Staff tab first.</div>`;
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-train]");
+  if (!b) return;
+  try { sessionStorage.setItem("tccTrainCode", code); } catch (x) {}
+  location.href = "training.html?from=owner&who=" + encodeURIComponent(b.dataset.train);
+});
 
 /* ---------- today: both stores at a glance ---------- */
 let TODAY = null;
@@ -576,6 +624,11 @@ $("prepSave").addEventListener("click", async () => {
   toast("Prep list saved");
 });
 $("monthlyLink").href = RECIPE_BOOK + "#monthly";
+// Recipe photos: open the recipe book in photo mode (the owner code goes along for this visit only)
+$("photosBtn").addEventListener("click", () => {
+  try { sessionStorage.setItem("tccPhotoCode", code); } catch (e) {}
+  location.href = RECIPE_BOOK + "#photos";
+});
 
 /* ---------- start ---------- */
 setWhen("today");

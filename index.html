@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#111111">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
 <title>Thick Cookie Co Staff</title>
 <style>
   :root {
@@ -57,6 +61,9 @@
   .owner { color: var(--muted); font-weight: 700; font-size: 14px; text-decoration: none; border: 2px solid var(--line); background: #fff; border-radius: 12px; padding: 8px 14px; }
   .alert { background: linear-gradient(160deg, #ff9a6b 0%, #f2734f 60%, #e45f45 100%); }
   .recipes { background: linear-gradient(160deg, #ffd98a 0%, #f4bf55 60%, #e8a83c 100%); color: #3d2600 !important; }
+  a.tool.training { grid-column: 1 / -1; flex-direction: row; min-height: 0; padding: 18px 22px; gap: 14px; background: linear-gradient(160deg, #7fb2f0 0%, #5a93e3 60%, #3f7fd9 100%); }
+  a.tool.training .icon { width: 56px; height: 56px; font-size: 34px; border-radius: 16px; }
+  a.tool.training .desc { margin-left: auto; }
   .recipes .icon { background: #fff !important; }
   footer { margin-top: auto; padding-top: 34px; display: flex; gap: 16px; align-items: center; color: var(--muted); font-size: 14px; }
   .gear { border: 2px solid var(--line); background: #fff; color: var(--muted); border-radius: 12px; padding: 8px 14px; font-weight: 700; font-size: 14px; }
@@ -127,6 +134,11 @@
       <span class="icon">📖</span>
       <span class="name">Recipe Book</span>
       <span class="desc">Every THICK recipe, step by step</span>
+    </a>
+    <a class="tool training" href="training.html">
+      <span class="icon">🎓</span>
+      <span class="name">Training</span>
+      <span class="desc">Who's signed off on what</span>
     </a>
   </main>
 
