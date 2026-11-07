@@ -124,6 +124,10 @@
   .hint { color: var(--muted); font-size: 14px; margin: 6px 2px 0; }
   .photosbtn { display: flex; flex-direction: column; align-items: flex-start; width: 100%; min-height: 58px; margin: -6px 0 16px; padding: 10px 16px; border: none; border-radius: 16px; background: #ffd23f; color: #1f2b25; font-size: 18px; font-weight: 800; text-align: left; cursor: pointer; }
   .photosbtn span { font-size: 14px; font-weight: 600; }
+  .mlist { list-style: none; margin: 0 0 8px; padding: 0; }
+  .mlist li { padding: 10px 12px; border: 2px solid var(--line); border-radius: 12px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 2px; }
+  .mlist li span { font-size: 14px; color: var(--muted); font-weight: 600; }
+  .mlist li.hint { border: none; padding: 4px 0; }
   .rlink { display: inline-block; margin-top: 10px; text-decoration: none; font-weight: 800; font-size: 15px; color: var(--brand); background: #eef4f0; border: 2px solid #bccfc5; border-radius: 12px; padding: 8px 14px; }
   #tabPrep textarea { min-height: 150px; font-size: 18px; line-height: 1.45; }
   .ok-msg { color: var(--green); font-weight: 700; margin-top: 10px; min-height: 20px; }
@@ -158,7 +162,7 @@
       <button type="button" class="tab" data-tab="Staff">👥 Staff</button>
       <button type="button" class="tab" data-tab="Training">🎓 Training</button>
     </div>
-    <button type="button" class="photosbtn" id="photosBtn">📷 Recipe photos <span>Add or change photos in the recipe book</span></button>
+    <button type="button" class="photosbtn" id="photosBtn">📖 Recipe book: owner mode <span>Add photos, or add cookies to this month's flavors</span></button>
     <div id="tabToday">
       <div class="refresh"><span id="todayAt">Loading…</span><button type="button" id="todayRefresh">↻ Refresh</button></div>
       <div id="toOrder"></div>
@@ -233,9 +237,8 @@
     <div id="tabPrep" hidden>
       <section class="card">
         <h2>This month's flavors</h2>
-        <textarea id="pMonthly" placeholder="One flavor per line. Put its frosting after a dash:&#10;Pumpkin Cheesecake - Cream Cheese Frosting&#10;Caramel Apple"></textarea>
-        <p class="hint">Use the same names as the Monthly tab in your recipe book. Put the frosting after a dash (two frostings: separate with a comma). Frostings get their own section on the Prep List.</p>
-        <a class="rlink" id="monthlyLink" target="_blank" rel="noopener">📖 Open monthly recipes →</a>
+        <ul class="mlist" id="pMonthlyList"><li class="hint">Loading…</li></ul>
+        <p class="hint">To add or remove one, tap <b>📖 Recipe book: owner mode</b> above, open the cookie, and tap 🗓️ Add to this month. Its frostings come with it.</p>
       </section>
       <section class="card">
         <h2>Next month's flavors <span style="text-transform:none;letter-spacing:0;font-weight:400">(optional)</span></h2>
@@ -597,7 +600,11 @@ $("staffSave").addEventListener("click", async () => {
 /* ---------- prep list items ---------- */
 const lines = v => v.split("\n").map(x => x.trim()).filter(Boolean);
 function fillPrep(p) {
-  $("pMonthly").value = (p.monthly || []).join("\n");
+  const m = p.monthly || [];
+  $("pMonthlyList").innerHTML = m.length ? m.map(l => {
+    const i = l.search(/\s[-–—]\s/);
+    return i > 0 ? `<li><b>${esc(l.slice(0, i))}</b><span>🧁 ${esc(l.slice(i + 3))}</span></li>` : `<li><b>${esc(l)}</b></li>`;
+  }).join("") : `<li class="hint">None yet.</li>`;
   $("pNext").value = (p.next || []).join("\n");
   $("pNextStart").value = p.nextStart || "";
   $("pDoughs").value = (p.doughs || []).join("\n");
@@ -612,10 +619,13 @@ async function loadPrep() {
 }
 $("prepSave").addEventListener("click", async () => {
   $("prepErr").textContent = ""; $("prepOk").textContent = "";
-  const prep = { monthly: lines($("pMonthly").value), next: lines($("pNext").value), nextStart: $("pNextStart").value,
-                 doughs: lines($("pDoughs").value) };
+  const prep = { next: lines($("pNext").value), nextStart: $("pNextStart").value, doughs: lines($("pDoughs").value) };
   if (prep.next.length && !prep.nextStart) { $("prepErr").textContent = "Pick the date next month's flavors start."; return; }
   $("prepSave").disabled = true; $("prepSave").textContent = "Saving…";
+  // this month's flavors are managed in recipe book owner mode: keep whatever is saved there right now
+  const cur = await call({ op: "prepGet" });
+  if (!cur.ok) { $("prepSave").disabled = false; $("prepSave").textContent = "Save prep list"; $("prepErr").textContent = cur.error; return; }
+  prep.monthly = cur.prep.monthly || [];
   const r = await call({ op: "prepSave", prep });
   $("prepSave").disabled = false; $("prepSave").textContent = "Save prep list";
   if (!r.ok) { $("prepErr").textContent = r.error; return; }
@@ -623,7 +633,7 @@ $("prepSave").addEventListener("click", async () => {
   $("prepOk").textContent = "Saved. Tablets update within a minute.";
   toast("Prep list saved");
 });
-$("monthlyLink").href = RECIPE_BOOK + "#monthly";
+
 // Recipe photos: open the recipe book in photo mode (the owner code goes along for this visit only)
 $("photosBtn").addEventListener("click", () => {
   try { sessionStorage.setItem("tccPhotoCode", code); } catch (e) {}
