@@ -396,5 +396,24 @@ if (!STORE) {
   window.addEventListener("online", sync);
 }
 </script>
+<script>
+/* Back / Menu buttons go BACK (no new page stacked), so the Android back button never loops between pages */
+function goBackTo(href) {
+  try {
+    var t = new URL(href, location.href), r = document.referrer ? new URL(document.referrer) : null;
+    if (r && r.origin === t.origin && r.pathname === t.pathname && history.length > 1) { history.back(); return; }
+  } catch (e) {}
+  location.replace(href);
+}
+document.addEventListener("click", function (e) {
+  var a = e.target.closest && e.target.closest("a.back[href], a.menuback[href], a[data-back][href]");
+  if (!a || a.dataset.act) return;
+  var href = a.getAttribute("href");
+  if (!href || href === "#" || href.indexOf("javascript:") === 0) return;
+  e.preventDefault(); goBackTo(href);
+});
+/* coming back to a page shows fresh info */
+window.addEventListener("pageshow", function (e) { if (e.persisted) location.reload(); });
+</script>
 </body>
 </html>

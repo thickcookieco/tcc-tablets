@@ -992,7 +992,7 @@ function renderDone() {
     <h2>${cur.shift === "morning" ? "Opening" : "Closing"} checklist finished</h2>
     <p class="lead">${s.at ? "Finished at " + fmt(s.at) + (s.by ? " by " + esc(s.by) : "") + ". " : ""}The owners got the summary.</p>
     ${cur.shift === "closing" ? `<p class="lead"><b>Last step: clock out on Gusto.</b></p>` : `<p class="lead"><b>Have a great shift!</b></p>`}
-    <div style="max-width:420px;margin:0 auto"><a class="primary" style="display:flex;align-items:center;justify-content:center;text-decoration:none" href="index.html">Back to menu</a></div>
+    <div style="max-width:420px;margin:0 auto"><a data-back class="primary" style="display:flex;align-items:center;justify-content:center;text-decoration:none" href="index.html">Back to menu</a></div>
   </div>`;
 }
 
@@ -1367,6 +1367,25 @@ cleanupOld();
 const qs = new URLSearchParams(location.search).get("c");
 if (STORE && qs && (qs === "slow" || CHECKLISTS[qs])) openShift(qs);
 else render();
+</script>
+<script>
+/* Back / Menu buttons go BACK (no new page stacked), so the Android back button never loops between pages */
+function goBackTo(href) {
+  try {
+    var t = new URL(href, location.href), r = document.referrer ? new URL(document.referrer) : null;
+    if (r && r.origin === t.origin && r.pathname === t.pathname && history.length > 1) { history.back(); return; }
+  } catch (e) {}
+  location.replace(href);
+}
+document.addEventListener("click", function (e) {
+  var a = e.target.closest && e.target.closest("a.back[href], a.menuback[href], a[data-back][href]");
+  if (!a || a.dataset.act) return;
+  var href = a.getAttribute("href");
+  if (!href || href === "#" || href.indexOf("javascript:") === 0) return;
+  e.preventDefault(); goBackTo(href);
+});
+/* coming back to a page shows fresh info */
+window.addEventListener("pageshow", function (e) { if (e.persisted) location.reload(); });
 </script>
 </body>
 </html>

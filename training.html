@@ -210,7 +210,7 @@ $("ownerBtn").addEventListener("click", () => {
   };
   $("ocGo").onclick = go; $("oc").onkeydown = e => { if (e.key === "Enter") go(); };
 });
-$("ownerDone").addEventListener("click", () => { setOwner(false); if (fromOwner) location.href = "owner.html"; });
+$("ownerDone").addEventListener("click", () => { setOwner(false); if (fromOwner) goBackTo("owner.html"); });
 
 async function save(skill, on) {
   const p = DATA.people.find(x => x.name === sel); if (!p) return;
@@ -243,6 +243,25 @@ if (ownerCode) {
   post({ action: "owner", code: ownerCode, op: "check" }).then(r => { if (r.ok) setOwner(true); else setOwner(false); }).catch(() => setOwner(true));
 }
 setInterval(() => { if (document.visibilityState === "visible" && !document.body.classList.contains("owner")) load(); }, 60000);
+</script>
+<script>
+/* Back / Menu buttons go BACK (no new page stacked), so the Android back button never loops between pages */
+function goBackTo(href) {
+  try {
+    var t = new URL(href, location.href), r = document.referrer ? new URL(document.referrer) : null;
+    if (r && r.origin === t.origin && r.pathname === t.pathname && history.length > 1) { history.back(); return; }
+  } catch (e) {}
+  location.replace(href);
+}
+document.addEventListener("click", function (e) {
+  var a = e.target.closest && e.target.closest("a.back[href], a.menuback[href], a[data-back][href]");
+  if (!a || a.dataset.act) return;
+  var href = a.getAttribute("href");
+  if (!href || href === "#" || href.indexOf("javascript:") === 0) return;
+  e.preventDefault(); goBackTo(href);
+});
+/* coming back to a page shows fresh info */
+window.addEventListener("pageshow", function (e) { if (e.persisted) location.reload(); });
 </script>
 </body>
 </html>

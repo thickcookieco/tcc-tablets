@@ -559,7 +559,7 @@ showStore();
 
 $("sendBtn").addEventListener("click", send);
 $("clearBtn").addEventListener("click", resetForm);
-function toMenu() { location.href = "index.html"; }
+function toMenu() { goBackTo("index.html"); }
 $("mBtn").addEventListener("click", () => { clearTimeout(modalTimer); $("modal").classList.contains("err") ? hideModal() : toMenu(); });
 $("mAgain").addEventListener("click", () => { clearTimeout(modalTimer); hideModal(); });
 $("overlay").addEventListener("click", e => { if (e.target.id === "overlay") { clearTimeout(modalTimer); hideModal(); } });
@@ -573,6 +573,25 @@ renderList();
 updatePending();
 flush().then(loadReported);
 setInterval(() => { if (document.visibilityState === "visible") loadReported(); }, 60000);
+</script>
+<script>
+/* Back / Menu buttons go BACK (no new page stacked), so the Android back button never loops between pages */
+function goBackTo(href) {
+  try {
+    var t = new URL(href, location.href), r = document.referrer ? new URL(document.referrer) : null;
+    if (r && r.origin === t.origin && r.pathname === t.pathname && history.length > 1) { history.back(); return; }
+  } catch (e) {}
+  location.replace(href);
+}
+document.addEventListener("click", function (e) {
+  var a = e.target.closest && e.target.closest("a.back[href], a.menuback[href], a[data-back][href]");
+  if (!a || a.dataset.act) return;
+  var href = a.getAttribute("href");
+  if (!href || href === "#" || href.indexOf("javascript:") === 0) return;
+  e.preventDefault(); goBackTo(href);
+});
+/* coming back to a page shows fresh info */
+window.addEventListener("pageshow", function (e) { if (e.persisted) location.reload(); });
 </script>
 </body>
 </html>
